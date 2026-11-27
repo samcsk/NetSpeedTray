@@ -64,6 +64,7 @@ def fetch_devin(org, protected_token):
 
 class QuotaPoller(QObject):
     changed = pyqtSignal()
+    account_changed = pyqtSignal(str)
     _finished = pyqtSignal(str, int, str)
 
     def __init__(self, parent=None):
@@ -113,6 +114,7 @@ class QuotaPoller(QObject):
             self._generation += 1
             self._active["codex"] = self._generation
             self.values.pop("codex", None)
+            self.account_changed.emit("codex")
             self._start("codex")
             self.changed.emit()
 

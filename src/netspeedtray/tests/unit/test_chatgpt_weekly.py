@@ -28,6 +28,8 @@ def test_close_sign_in_refreshes_enabled_provider(qtbot, tmp_path, monkeypatch):
     monkeypatch.setattr(weekly, "edge_executable", lambda: edge)
     monkeypatch.setattr(weekly.subprocess, "run", browser)
     poller = quotas.QuotaPoller()
+    frozen = {"devin": "62% 7d", "codex": "35%"}
+    poller.account_changed.connect(lambda provider: frozen.pop(provider, None))
     login = weekly.sign_in_window()
     try:
         login.open()
@@ -44,6 +46,7 @@ def test_close_sign_in_refreshes_enabled_provider(qtbot, tmp_path, monkeypatch):
         close_window.set()
         qtbot.waitUntil(lambda: poller.values == {"codex": "71%"})
         fetch.assert_called_once()
+        assert frozen == {"devin": "62% 7d"}
     finally:
         close_window.set()
         poller.configure({})
