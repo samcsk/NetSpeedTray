@@ -95,3 +95,14 @@ def test_paused_freezes_the_mini_graph_too():
     assert graph(f) == ([1], [10], [20])
     NetworkSpeedWidget.resume(f)
     assert graph(f) == ([1, 2], [10, 11], [20, 21])
+
+
+def test_switching_accounts_while_paused_discards_only_the_old_balance():
+    from unittest.mock import Mock
+    poller = Mock()
+    poller.values = {"codex": "51% 5h", "devin": "3% 7d"}
+    poller.configure.side_effect = lambda config: poller.values.pop("devin")
+    widget = types.SimpleNamespace(_quota_poller=poller, config={"quota_devin_org": "org-new"},
+                                   _paused_quotas={"codex": "54% 5h", "devin": "5% 7d"})
+    NetworkSpeedWidget.apply_quotas(widget)
+    assert widget._paused_quotas == {"codex": "54% 5h"}

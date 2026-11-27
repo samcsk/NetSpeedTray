@@ -993,6 +993,10 @@ class NetworkSpeedWidget(QWidget):
             self._quota_poller = QuotaPoller(self)
             self._quota_poller.changed.connect(self.update)
         self._quota_poller.configure(self.config)
+        # configure() drops readings for disabled providers and changed accounts.
+        # Remove their paused copies before the next paint as well.
+        for name in self._paused_quotas.keys() - self._quota_poller.values.keys():
+            del self._paused_quotas[name]
 
     def apply_metrics_endpoint(self) -> None:
         """Start / stop / move the local metrics endpoint to match the config (2.2 scope B). Called at
