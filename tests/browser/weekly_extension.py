@@ -11,7 +11,7 @@ EXTENSION = Path(__file__).resolve().parents[2] / "assets" / "chatgpt-weekly"
 USAGE = "https://chatgpt.com/settings/usage"
 CARD = """<section><div role="group"><h2>Weekly limit</h2></div>
           <p>Resets at your quota limit tomorrow</p><span>71% left</span></section>
-          <section><h2>5-hour limit</h2><span>3% left</span></section>"""
+          <section><span>3% left</span><h2>5-hour limit</h2></section>"""
 
 
 def main():
@@ -56,6 +56,14 @@ def main():
             (folder / f"weekly-{browser}.json").write_text(data)
             assert json.loads(data)["weekly"] == {"left": 71}
             assert receiver.read() == "71%"
+
+            # The adjacent card renders its balance before its heading. It cannot
+            # supply a reading when the weekly card loses its balance.
+            usage.locator("section").first.locator("span").evaluate("(node) => node.remove()")
+            assert worker.evaluate("""async () => {
+                const [tab] = await usageTabs();
+                return (await chrome.tabs.sendMessage(tab.id, "read")).weekly;
+            }""") is None
 
             # A second profile paired the same widget. Restoring the old handle must not
             # reclaim ownership until the user explicitly chooses the folder again.

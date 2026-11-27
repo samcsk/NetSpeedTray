@@ -14,14 +14,20 @@ function readWeeklyCard(visibleText) {
 }
 
 function readWeeklyPage(root) {
-    // Respect card boundaries when the dashboard groups fields into semantic regions.
-    // Some layouts render headings and fields as plain siblings under one parent.
-    const regions = root.querySelectorAll("article, section, li, [role='group'], [role='region']");
-    for (const region of Array.from(regions).reverse()) {
-        if (region.checkVisibility()) {
-            const balance = readWeeklyCard(region.innerText);
-            if (balance) return balance;
-        }
+    const selector = "article, section, li, [role='group'], [role='region']";
+    const regions = Array.from(root.querySelectorAll(selector)).filter(el => el.checkVisibility());
+    const weeklyHeading = /^\s*Weekly limit\s*$/im;
+    const weekly = regions.filter(el => weeklyHeading.test(el.innerText)).reverse();
+    // An enclosing group may hold the heading and balance in separate children.
+    // Stop expanding before a sibling card could contribute its own balance.
+    const peers = regions.filter(el => !weeklyHeading.test(el.innerText) &&
+        /\d\s*%\s+left\b/i.test(el.innerText) &&
+        (el.querySelector("h1,h2,h3,h4,h5,h6,[role='heading']") ||
+         /\b(?:limit|quota)s?\b/i.test(el.innerText)));
+    for (const region of [...weekly, root]) {
+        if (peers.some(peer => region.contains(peer))) continue;
+        const balance = readWeeklyCard(region.innerText);
+        if (balance) return balance;
     }
-    return readWeeklyCard(root.innerText);
+    return null;
 }
