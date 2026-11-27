@@ -33,8 +33,12 @@ function readWeeklyPage(root) {
             branches.add(parent);
         }
     }
-    const card = weeklyCards.reverse().find(region => !branches.has(region));
-    if (card) return readWeeklyCard(card.innerText);
+    const cards = weeklyCards.reverse().filter(region => !branches.has(region));
+    if (cards.length) {
+        // A section containing only the heading can be nested inside the actual card.
+        const card = cards.find(region => !/^\s*Weekly limit\s*$/i.test(region.innerText));
+        return card ? readWeeklyCard(card.innerText) : null;
+    }
     if (!peers.size) return readWeeklyCard(root.innerText);
 
     // Read contiguous fields on either side of peer cards. Each peer ends a block
