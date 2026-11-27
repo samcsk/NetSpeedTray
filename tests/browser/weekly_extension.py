@@ -52,7 +52,8 @@ def main():
             browser, data = snapshot
             (folder / "browser.json").write_text(json.dumps(browser))
             (folder / f"weekly-{browser}.json").write_text(data)
-            assert receiver.read() == "71% · 1d 21h"
+            assert json.loads(data)["weekly"] == {"left": 71}
+            assert receiver.read() == "71%"
 
             # A second profile paired the same widget. Restoring the old handle must not
             # reclaim ownership until the user explicitly chooses the folder again.

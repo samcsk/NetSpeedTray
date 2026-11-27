@@ -12,7 +12,7 @@ def quota_width(fm, names, height):
     if not names:
         return 0
     label = max(fm.horizontalAdvance(name) for name in names)
-    value = max(fm.horizontalAdvance(text) for text in ("100% · 23h 59m", "100% · 6d 23h", "Open usage", "No quota"))
+    value = max(fm.horizontalAdvance(text) for text in ("100% 7d", "Open usage", "Folder error", "No quota"))
     columns = 1 if height >= len(names) * fm.height() else len(names)
     return columns * (8 + label + fm.horizontalAdvance("  ") + value)
 

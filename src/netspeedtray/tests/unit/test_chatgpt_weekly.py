@@ -16,9 +16,9 @@ def test_weekly_receiver_lifecycle(tmp_path, monkeypatch):
     def publish(value):
         output.write_text(json.dumps({"session": marker["session"], "weekly": value}))
 
-    publish({"left": 71, "minutes": 2700})
-    assert receiver.read() == "71% · 1d 21h"
-    publish({"left": True, "minutes": 1})
+    publish({"left": 71})
+    assert receiver.read() == "71%"
+    publish({"left": True})
     assert receiver.read() == "Open usage"
     publish(None)
     assert receiver.read() == "No data"
@@ -29,8 +29,8 @@ def test_weekly_receiver_lifecycle(tmp_path, monkeypatch):
     assert weekly.WeeklyReceiver(tmp_path).read() == "Open usage"
 
 
-@pytest.mark.parametrize(("left", "minutes", "expected"), [
-    (0, 0, "0% · 0m"), (100, 10080, "100% · 7d 0h"), (87, 124, "87% · 2h 4m"),
+@pytest.mark.parametrize(("data", "expected"), [
+    ({"left": 0}, "0%"), ({"left": 100}, "100%"), ({"left": 71, "minutes": 2700}, "71%"),
 ])
-def test_weekly_countdown(left, minutes, expected):
-    assert weekly.weekly_readout({"left": left, "minutes": minutes}) == expected
+def test_weekly_balance(data, expected):
+    assert weekly.weekly_readout(data) == expected

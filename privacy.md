@@ -13,8 +13,8 @@ The application is designed to be completely self-contained on your computer. It
 - **AI quotas (off by default).** When enabled, NetSpeedTray sends the Devin organization ID and
   dashboard token to `app.devin.ai` over HTTPS to read its quota. The token is stored in settings
   under Windows DPAPI user protection. Both values are redacted from support bundles. For ChatGPT,
-  the optional Chrome/Edge extension reads the two values on the weekly limit card in your open usage tab.
-  It saves the percentage left and minutes until reset in a small snapshot in the dedicated folder you
+  the optional Chrome/Edge extension reads the percentage left on the weekly limit card in your open usage tab.
+  It saves that percentage in a small snapshot in the dedicated folder you
   choose (`%USERPROFILE%\NetSpeedTray\ChatGPT weekly`). NetSpeedTray removes the snapshot when you
   disable the provider or quit normally and ignores readings from previous sessions.
   Sign-in stays in the browser. The extension checks for the widget once a minute and refreshes the

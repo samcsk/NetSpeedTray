@@ -12,22 +12,11 @@ FOLDER = Path.home() / "NetSpeedTray" / "ChatGPT weekly"
 def weekly_readout(data):
     if data is None:
         return "No data"
-    if not isinstance(data, dict) or data.keys() != {"left", "minutes"}:
-        raise ValueError("unexpected quota fields")
-    left, minutes = data["left"], data["minutes"]
+    # Older installed extensions also send reset minutes. Only the balance is needed.
+    left = data.get("left") if isinstance(data, dict) else None
     if type(left) is not int or not 0 <= left <= 100:
         raise ValueError("invalid percentage")
-    if type(minutes) is not int or not 0 <= minutes <= 7 * 24 * 60:
-        raise ValueError("invalid weekly countdown")
-    hours, mins = divmod(minutes, 60)
-    days, hrs = divmod(hours, 24)
-    if days:
-        countdown = f"{days}d {hrs}h"
-    elif hours:
-        countdown = f"{hours}h {mins}m"
-    else:
-        countdown = f"{mins}m"
-    return f"{left}% · {countdown}"
+    return f"{left}%"
 
 
 class WeeklyReceiver:

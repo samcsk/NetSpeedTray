@@ -120,7 +120,7 @@ def test_panel_draws_values_inside_reserved_space(qapp, vertical, height):
         img.fill(QColor("black"))
         painter = QPainter(img)
         painter.setFont(font)
-        draw_quotas(painter, panel, names, {"devin": value, "codex": "71% · 1d 21h"}, vertical, "white")
+        draw_quotas(painter, panel, names, {"devin": value, "codex": "71%"}, vertical, "white")
         painter.end()
         return img
     a, b = paint("100% 1d"), paint("Retry")

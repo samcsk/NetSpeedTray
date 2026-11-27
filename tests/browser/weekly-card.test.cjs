@@ -8,10 +8,13 @@ const parse = text => JSON.parse(JSON.stringify(runInNewContext(script + "\nread
 
 test("selects the weekly fields beside a five-hour limit and manual resets", () => {
     const result = parse("5-hour limit\nResets in 30m\n2% left\nWeekly limit\nResets in 1d 21h\n71% left\nUsage limit resets\nAvailable 3");
-    assert.deepEqual(result, {left: 71, minutes: 2700});
+    assert.deepEqual(result, {left: 71});
 });
 test("handles the opposite reading order and a zero balance", () => {
-    assert.deepEqual(parse("Weekly limit\n0% left\nResets in 43m"), {left: 0, minutes: 43});
+    assert.deepEqual(parse("Weekly limit\n0% left\nResets in 43m"), {left: 0});
+});
+test("reads the percentage when the card has no reset time", () => {
+    assert.deepEqual(parse("Weekly limit\n100% left"), {left: 100});
 });
 test("never substitutes another window or the available reset count", () => {
     assert.equal(parse("Weekly limit\nUsage limit resets\nAvailable 3\nResets in 1d 21h\n71% left"), null);
