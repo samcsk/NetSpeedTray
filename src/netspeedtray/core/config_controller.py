@@ -136,6 +136,8 @@ class ConfigController:
             # Apply the changes to the system
             self.apply_all_settings()
 
+            if save_to_disk and hasattr(self.widget, "apply_quotas"):
+                self.widget.apply_quotas()
             self.logger.debug("Settings successfully handled and applied.")
 
         except Exception as e:

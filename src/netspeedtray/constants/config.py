@@ -445,6 +445,10 @@ class ConfigConstants:
         "widget_cycle_interval": DEFAULT_WIDGET_CYCLE_INTERVAL,
         # Network identity uses the connected-profile SSID API and location-free channel query.
         # The optional identity indicator remains disabled by default.
+        "quota_devin": False,
+        "quota_codex": False,
+        "quota_devin_org": "",
+        "quota_devin_token_protected": "",
         "show_network_identity": False,
         "identity_mode": "band",           # band | ssid | both (no Wi-Fi scans)
         "band_display": "always",          # always (neutral) | colored (by band) | alert_only (2.4G warning)
@@ -647,6 +651,10 @@ class ConfigConstants:
         "widget_display_mode": {"type": str, "default": DEFAULT_WIDGET_DISPLAY_MODE, "choices": ["network_only", "cycle", "side_by_side"]},
         "widget_display_order": {"type": list, "default": DEFAULT_WIDGET_DISPLAY_ORDER, "item_type": str},
         "widget_cycle_interval": {"type": int, "default": DEFAULT_WIDGET_CYCLE_INTERVAL, "min": 1, "max": 60},
+        "quota_devin": {"type": bool, "default": False},
+        "quota_codex": {"type": bool, "default": False},
+        "quota_devin_org": {"type": str, "default": ""},
+        "quota_devin_token_protected": {"type": str, "default": ""},
         "show_network_identity": {"type": bool, "default": False},
         "identity_mode": {"type": str, "default": "band", "choices": ["band", "ssid", "both"]},
         "band_display": {"type": str, "default": "always", "choices": ["always", "colored", "alert_only"]},

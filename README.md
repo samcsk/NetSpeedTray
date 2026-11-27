@@ -21,6 +21,36 @@ Free and open source, signed, no ads, no telemetry. The feature Windows forgot.
 
 ## Install
 
+### Taskbar quotas in this fork
+
+Run this branch on Windows with Python 3.13. Open PowerShell in the extracted source folder and run:
+
+```powershell
+py -3.13 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe src/monitor.py
+```
+
+Right-click the widget and open **Settings → Widget → AI quotas**. Each enabled provider refreshes
+when first enabled and every five minutes thereafter. The taskbar shows the percentage remaining in the
+window closest to exhaustion. For example, **Devin 34% 7d** means the weekly window has 34% left.
+
+- **Devin.** Open your organization's **Usage & Limits** page in your signed-in browser. In Developer
+  Tools → Network, reload the page and select the successful `billing/quota/usage` request.
+  Enter its `x-cog-org-id` request header in **Devin organization ID** and paste its `Authorization`
+  value under **Set token**. Enable **Devin** and save. Windows protects the token for your user
+  account. If **Sign in** appears, repeat this step. To remove the token, choose **Change token**,
+  leave it empty, confirm and save. This integration uses the Devin dashboard's quota endpoint.
+- **ChatGPT (Codex).** Install the Windows Codex CLI, run `codex login`, and sign in with your
+  ChatGPT account. Restart NetSpeedTray if you just installed the CLI, enable **ChatGPT (Codex)**,
+  and save. The figure comes from OpenAI's `account/rateLimits/read` and covers your Codex allowance
+  on that account. Individual chat-model message counts are outside its scope.
+  [Codex CLI setup](https://developers.openai.com/codex/cli/) · [App Server API](https://developers.openai.com/codex/app-server/)
+
+**Set up** indicates missing Devin credentials. **Install CLI** means NetSpeedTray could not find
+the Codex executable. **Retry** means the poll failed and will run again. **No data** means the
+account returned no usable quota window. The installer and WinGet command below install upstream NetSpeedTray.
+
 ```powershell
 winget install --id erez-c137.NetSpeedTray
 ```

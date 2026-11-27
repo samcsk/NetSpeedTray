@@ -532,6 +532,9 @@ class WidgetLayoutManager:
             else:
                 final_width = max(calculated_width, 50)
             final_height = max(calculated_height, 20)
+            if is_horizontal:
+                from netspeedtray.utils.quota_paint import quota_names, quota_width
+                final_width += quota_width(self.metrics, quota_names(self.widget.config), math.ceil(final_height))
 
             self.widget.setFixedSize(math.ceil(final_width), math.ceil(final_height))
             self.logger.debug(f"Widget resized to: {self.widget.width()}x{self.widget.height()}px")

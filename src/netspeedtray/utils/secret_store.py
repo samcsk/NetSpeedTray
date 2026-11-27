@@ -35,8 +35,8 @@ def _warn_unreadable_once(stored: str, why: str) -> None:
     if stored in _warned_unreadable:
         return
     _warned_unreadable.add(stored)
-    logger.warning("The saved LibreHardwareMonitor password cannot be read for this Windows user (%s). "
-                   "It is kept until a new one is entered in Settings > Hardware.", why)
+    logger.warning("Windows could not read a saved credential for this user (%s). "
+                   "It can be replaced in Settings.", why)
 
 
 def _win32crypt():

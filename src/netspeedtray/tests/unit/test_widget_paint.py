@@ -70,6 +70,25 @@ def test_render_widget_is_deterministic(q_app):
     assert a == b, "same config + metrics must produce identical pixels (preview stability)"
 
 
+def test_quota_values_affect_only_the_enabled_panel(q_app):
+    from netspeedtray.utils.quota_paint import split_quota_rect
+    cfg = _base_config(quota_devin=True, quota_codex=True)
+    metrics = demo_metrics()
+    renderer = WidgetRenderer(cfg, I18nStrings("en_US"))
+    base, panel = split_quota_rect(QRect(0, 0, W, H), renderer.metrics, renderer.config.quota_names, False)
+    def frame():
+        return QImage(_render_to_bytes(cfg, metrics), W, H, QImage.Format.Format_RGBA8888).copy()
+    first = frame()
+    metrics.quotas = {"devin": "0% 1d", "codex": "Retry"}
+    second = frame()
+    assert first.copy(panel) != second.copy(panel)
+    assert first.copy(base) == second.copy(base)
+    cfg.update(quota_devin=False, quota_codex=False)
+    disabled = frame()
+    metrics.quotas.clear()
+    assert disabled == frame()
+
+
 def test_render_widget_reflects_config(q_app):
     # A robust, font-substitution-proof check that config actually drives the output:
     # a larger font paints more solid glyph pixels. (Arrow-glyph swaps are visible on real

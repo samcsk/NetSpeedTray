@@ -73,7 +73,8 @@ _CONFIG_KEYS_TO_STRIP: tuple = ()
 # We keep the diagnostic SHAPE (how many interfaces, that a host was set) but never the literal name.
 # IMPORTANT: any NEW config field that can hold a name/path/host/ID must be added here.
 _CONFIG_LIST_KEYS_TO_REDACT: tuple = ("selected_interfaces", "excluded_interfaces")
-_CONFIG_VALUE_KEYS_TO_REDACT: tuple = ("latency_public_host", "lhm_username", "lhm_password_protected")
+_CONFIG_VALUE_KEYS_TO_REDACT: tuple = ("latency_public_host", "lhm_username", "lhm_password_protected",
+                                      "quota_devin_org", "quota_devin_token_protected")
 _CONFIG_GPU_KEY = "gpu_adapter"
 
 

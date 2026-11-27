@@ -450,6 +450,8 @@ class NetworkSpeedWidget(QWidget):
         # "Show on all taskbars" (#229): the MirrorManager while the setting is on, else None - and
         # with it off nothing of views/widget/mirror.py is imported, built, connected or timed.
         self._mirrors = None
+        self._quota_poller = None
+        self._paused_quotas = {}
         
         # Hooks for system events
         self.system_event_handler: SystemEventHandler
@@ -494,6 +496,7 @@ class NetworkSpeedWidget(QWidget):
             self.position_manager.update_position()
             self._synchronize_startup_task()
             self.apply_metrics_endpoint()   # opt-in, off by default: a no-op unless the user enabled it
+            self.apply_quotas()
             # Reachable by the installer's shutdown request from here on, not only once first shown.
             self._arm_shutdown_channel()
 
@@ -982,6 +985,15 @@ class NetworkSpeedWidget(QWidget):
         self.latency_link_lost = False
         self._latency_loss_windows = LatencyLossWindows()
 
+    def apply_quotas(self) -> None:
+        if self._quota_poller is None:
+            if not (self.config.get("quota_devin") or self.config.get("quota_codex")):
+                return
+            from netspeedtray.core.quotas import QuotaPoller
+            self._quota_poller = QuotaPoller(self)
+            self._quota_poller.changed.connect(self.update)
+        self._quota_poller.configure(self.config)
+
     def apply_metrics_endpoint(self) -> None:
         """Start / stop / move the local metrics endpoint to match the config (2.2 scope B). Called at
         startup and from every settings apply; idempotent, so a live-preview tick that did not touch
@@ -1117,6 +1129,8 @@ class NetworkSpeedWidget(QWidget):
         # is_paused is a transient live-view toggle only - deliberately NOT persisted, so the
         # widget never reboots into a frozen state that looks like a hang.
         self.is_paused = True
+        poller = getattr(self, "_quota_poller", None)
+        self._paused_quotas = dict(poller.values) if poller else {}
         self._paused_histories = None
         try:
             self._paused_histories = self._live_graph_histories()
@@ -1516,6 +1530,8 @@ class NetworkSpeedWidget(QWidget):
         identity_ssid = self._identity_ssid_text()
         net_history, cpu_history, gpu_history = self._graph_histories()
         return WidgetMetrics(
+            quotas=(getattr(self, "_paused_quotas", {}) if self.is_paused else
+                    getattr(getattr(self, "_quota_poller", None), "values", {})),
             upload_mbps=self.upload_speed,
             download_mbps=self.download_speed,
             cpu_usage=self.cpu_usage,
@@ -4151,6 +4167,7 @@ class NetworkSpeedWidget(QWidget):
         #   busy database thread, and a logoff ends the process ~5 s in - the save must already be done.
         steps = (
             ("stall watch", _stall_watch),
+            ("quota polling", lambda: self._quota_poller.configure({}) if getattr(self, "_quota_poller", None) else None),
             ("running panel", _running_panel),   # D3: never left open past quit
             ("mirrors", _mirrors),
             ("hover card", _hover_card), ("event hooks", _event_hooks),
