@@ -1,5 +1,10 @@
 importScripts("folder.js");
 const USAGE = "https://chatgpt.com/settings/usage";
+async function usageTabs() {
+    return (await chrome.tabs.query({url: USAGE + "*"})).filter(tab =>
+        new URL(tab.url).pathname.replace(/\/$/, "") === "/settings/usage");
+}
+
 async function sync() {
     const folder = await connectionFolder();
     if (!folder || await folder.queryPermission({mode: "readwrite"}) !== "granted") return;
@@ -11,8 +16,7 @@ async function sync() {
         await stream.write(JSON.stringify({session: active.session, weekly}));
         await stream.close();
     }
-    const tabs = (await chrome.tabs.query({url: USAGE + "*"})).filter(tab =>
-        new URL(tab.url).pathname.replace(/\/$/, "") === "/settings/usage");
+    const tabs = await usageTabs();
     if (tabs.length !== 1) {
         if (tabs.length > 1) await publish(null);
         return;
@@ -47,7 +51,7 @@ chrome.action.onClicked.addListener(async () => {
         await chrome.runtime.openOptionsPage();
         return;
     }
-    const [tab] = await chrome.tabs.query({url: USAGE});
+    const [tab] = await usageTabs();
     if (tab) {
         await chrome.tabs.update(tab.id, {active: true});
         await chrome.windows.update(tab.windowId, {focused: true});
