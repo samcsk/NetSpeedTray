@@ -68,16 +68,21 @@ def main():
             }""") is None
 
             # Weekly fields can be plain siblings of a separate five-hour card.
-            usage.evaluate("""() => {
-                document.body.innerHTML =
-                    '<section><h2>5-hour limit</h2><span>3% left</span></section>' +
-                    '<div style="display:contents"><h2>Weekly limit</h2>' +
-                    '<span>Resets </span><span>tomorrow</span><p><span>64</span><span>% left</span></p></div>';
-            }""")
-            assert worker.evaluate("""async () => {
-                const [tab] = await usageTabs();
-                return (await chrome.tabs.sendMessage(tab.id, "read")).weekly;
-            }""") == {"left": 64}
+            for fields, rendered_text in [
+                ('<span>Resets </span><span>tomorrow</span><p><span>64</span><span>% left</span></p>',
+                 'Resets tomorrow'),
+                ('<span>Resets in 1d</span><span>64</span><span>% left</span>', 'Resets in 1d64% left'),
+            ]:
+                usage.evaluate("""fields => {
+                    document.body.innerHTML =
+                        '<section><h2>5-hour limit</h2><span>3% left</span></section>' +
+                        '<div style="display:contents"><h2>Weekly limit</h2>' + fields + '</div>';
+                }""", fields)
+                assert rendered_text in usage.locator("body").inner_text()
+                assert worker.evaluate("""async () => {
+                    const [tab] = await usageTabs();
+                    return (await chrome.tabs.sendMessage(tab.id, "read")).weekly;
+                }""") == {"left": 64}
 
             # A second profile paired the same widget. Restoring the old handle must not
             # reclaim ownership until the user explicitly chooses the folder again.
