@@ -18,8 +18,9 @@ function readWeeklyPage(root) {
     // Some layouts render headings and fields as plain siblings under one parent.
     const regions = root.querySelectorAll("article, section, li, [role='group'], [role='region']");
     for (const region of Array.from(regions).reverse()) {
-        if (region.checkVisibility() && /^\s*Weekly limit\s*$/im.test(region.innerText)) {
-            return readWeeklyCard(region.innerText);
+        if (region.checkVisibility()) {
+            const balance = readWeeklyCard(region.innerText);
+            if (balance) return balance;
         }
     }
     return readWeeklyCard(root.innerText);

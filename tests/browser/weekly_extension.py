@@ -9,7 +9,8 @@ from netspeedtray.core.chatgpt_weekly import WeeklyReceiver
 
 EXTENSION = Path(__file__).resolve().parents[2] / "assets" / "chatgpt-weekly"
 USAGE = "https://chatgpt.com/settings/usage"
-CARD = """<section><h2>Weekly limit</h2><p>Resets at your quota limit tomorrow</p><span>71% left</span></section>
+CARD = """<section><div role="group"><h2>Weekly limit</h2></div>
+          <p>Resets at your quota limit tomorrow</p><span>71% left</span></section>
           <section><h2>5-hour limit</h2><span>3% left</span></section>"""
 
 
