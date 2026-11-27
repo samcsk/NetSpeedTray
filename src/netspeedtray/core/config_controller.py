@@ -130,8 +130,10 @@ class ConfigController:
                 # Persist only - apply_all_settings() below does the single visual apply (C0).
                 self.update_config(updated_config, apply_and_repaint=False)
             else:
-                # Direct memory update if not saving (e.g. preview)
-                self.widget.config.update(updated_config)
+                # Preview-only edits must not leak provider credentials or opt-ins into a
+                # later shutdown/position save. The dialog renders its own quota preview.
+                self.widget.config.update((key, value) for key, value in updated_config.items()
+                                          if not key.startswith("quota_"))
 
             # Apply the changes to the system
             self.apply_all_settings()
