@@ -6,7 +6,7 @@ function readWeeklyCard(visibleText) {
     const rest = visibleText.slice(heading.index + heading[0].length).trimStart();
     const card = rest.split(/\b\d+[\p{Dash}\s]+(?:hours?|days?|weeks?)\s+(?:limits?|quotas?)\b/iu, 1)[0];
     // A wrapped duration can span several lines in the card's visible text.
-    const fields = card.replace(/^Resets\s+in\s+(?:\d+\s*[dhm]\b[\s,]*)+(?=\d+\s*%)/i, "");
+    const fields = card.replace(/^Resets\s+in\s+(?:\d+\s*[dhm][\s,]*)+(?=\d+\s*%)/i, "");
     const percent = /^(?:Resets?\b[^\r\n%]*?\s+)?(\d{1,3})\s*%\s+left\b/i.exec(fields);
     if (!percent) return null;
     const left = Number(percent[1]);

@@ -11,6 +11,7 @@ test("selects the weekly fields beside a five-hour limit and manual resets", () 
     assert.deepEqual(result, {left: 71});
     assert.deepEqual(parse("Weekly limit\nResets in\n1d\n21h\n71% left"), {left: 71});
     assert.deepEqual(parse("Weekly limit\nResets in 1d, 21h\n71% left"), {left: 71});
+    assert.deepEqual(parse("Weekly limit\nResets in 1d64% left"), {left: 64});
 });
 test("handles the opposite reading order and a zero balance", () => {
     assert.deepEqual(parse("Weekly limit\n0% left\nResets in 43m"), {left: 0});
