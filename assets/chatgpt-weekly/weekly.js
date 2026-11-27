@@ -47,12 +47,12 @@ function readWeeklyPage(root) {
     function visit(node) {
         if (peers.has(node)) {
             blocks.push([]);
-        } else if (branches.has(node) ||
-                   (node instanceof HTMLElement && getComputedStyle(node).display === "contents")) {
+        } else if (branches.has(node)) {
             node.childNodes.forEach(visit);
         } else if (node.nodeType === Node.TEXT_NODE) {
             blocks.at(-1).push(node.textContent);
-        } else if (node instanceof HTMLElement && node.checkVisibility()) {
+        } else if (node instanceof HTMLElement &&
+                   (node.checkVisibility() || getComputedStyle(node).display === "contents")) {
             blocks.at(-1).push(node.innerText);
         }
     }

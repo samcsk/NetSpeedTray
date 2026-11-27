@@ -71,7 +71,8 @@ def main():
             usage.evaluate("""() => {
                 document.body.innerHTML =
                     '<section><h2>5-hour limit</h2><span>3% left</span></section>' +
-                    '<div style="display:contents"><h2>Weekly limit</h2><span>64</span><span>% left</span></div>';
+                    '<div style="display:contents"><h2>Weekly limit</h2>' +
+                    '<span>Resets </span><span>tomorrow</span><p><span>64</span><span>% left</span></p></div>';
             }""")
             assert worker.evaluate("""async () => {
                 const [tab] = await usageTabs();
