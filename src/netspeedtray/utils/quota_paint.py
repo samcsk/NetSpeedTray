@@ -12,7 +12,8 @@ def quota_width(fm, names, height):
     if not names:
         return 0
     label = max(fm.horizontalAdvance(name) for name in names)
-    statuses = ("100% 7d", "Reinstall", "Sign in", "No quota", "No data", "Set up", "Retry")
+    statuses = ("100% 7d", "100% 24h", "100% 60m", "100% <1m",
+                "Reinstall", "Sign in", "No quota", "No data", "Set up", "Retry")
     value = max(fm.horizontalAdvance(text) for text in statuses)
     columns = 1 if height >= len(names) * fm.height() else len(names)
     return columns * (8 + label + fm.horizontalAdvance("  ") + value)

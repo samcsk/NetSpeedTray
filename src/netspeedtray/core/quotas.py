@@ -1,6 +1,7 @@
 """Poll the enabled Devin and ChatGPT quota providers off the UI thread."""
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import json
 import math
 import re
@@ -16,23 +17,48 @@ TIMEOUT = 15
 MAX_RESPONSE = 256 * 1024
 
 
-def remaining(windows):
-    """Compact percentage and period of the binding (most used) window."""
-    valid = [(min(100, used), period) for used, period in windows
-             if type(used) in (int, float) and 0 <= used and math.isfinite(used)]
-    if not valid:
-        return "No data"
-    used, period = max(valid, key=lambda pair: pair[0])
-    percent = "<1" if 99 < used < 100 else str(round(100 - used))
-    return f"{percent}% {period}".rstrip()
+def _reset_countdown(value, now: datetime) -> str:
+    try:
+        if isinstance(value, str):
+            reset = datetime.fromisoformat(value)
+            if reset.tzinfo is None:
+                return ""
+        elif type(value) in (int, float):
+            # The API can represent the same instant in Unix seconds or milliseconds.
+            seconds = value / 1000 if value >= 100_000_000_000 else value
+            reset = datetime.fromtimestamp(seconds, UTC)
+        else:
+            return ""
+        seconds = (reset - now).total_seconds()
+        if seconds >= 86400:
+            # The Usage & Limits page rounds days using local wall time across DST.
+            local_reset = reset.astimezone().replace(tzinfo=None)
+            local_now = now.astimezone().replace(tzinfo=None)
+            days = (local_reset - local_now).total_seconds() / 86400
+            return f"{math.floor(days + 0.5)}d"
+    except (ValueError, OverflowError, OSError):
+        return ""
+    if seconds >= 3600:
+        return f"{math.floor(seconds / 3600 + 0.5)}h"
+    if seconds >= 60:
+        return f"{math.floor(seconds / 60 + 0.5)}m"
+    return "<1m" if seconds > 0 else ""
 
 
-def devin_readout(data):
+def devin_readout(data, *, now: datetime | None = None):
     if data.get("is_quota_plan") is False or data.get("has_quota_allocation") is False:
         return "No quota"
-    return remaining((data.get(f"{window}_percentage"), label)
-                     for window, label in (("daily", "1d"), ("weekly", "7d"))
-                     if not data.get(f"hide_{window}_quota"))
+    windows = []
+    for window in ("daily", "weekly"):
+        used = data.get(f"{window}_percentage")
+        if not data.get(f"hide_{window}_quota") and type(used) in (int, float) and 0 <= used < math.inf:
+            windows.append((used, data.get(f"{window}_reset_at")))
+    if not windows:
+        return "No data"
+    used, reset = max(windows, key=lambda entry: entry[0])
+    percent = "<1" if 99 < used < 100 else str(round(100 - min(used, 100)))
+    countdown = _reset_countdown(reset, now or datetime.now(UTC))
+    return f"{percent}% {countdown}".rstrip()
 
 
 def fetch_devin(org, protected_token):

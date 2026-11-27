@@ -84,7 +84,7 @@ class WidgetPage(QWidget):
         self.quota_codex = Win11Toggle(label_text="")
         self.quota_devin.toggled.connect(self.on_change)
         self.quota_codex.toggled.connect(self.on_change)
-        layout.addWidget(SettingCard("Devin", description=self.tr("Show the smaller daily or weekly allowance remaining."),
+        layout.addWidget(SettingCard("Devin", description=self.tr("Show the smaller daily or weekly allowance and time until it resets."),
                                      control=self.quota_devin))
         self.quota_org = QLineEdit()
         self.quota_org.setPlaceholderText("org-…")

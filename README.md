@@ -32,7 +32,7 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe src/monitor.py
 ```
 
-Right-click the widget and open **Settings → Widget → AI quotas**. Devin refreshes every five minutes and shows the window closest to exhaustion. For example, **Devin 34% 7d** means 34% of the weekly allowance remains.
+Right-click the widget and open **Settings → Widget → AI quotas**. Devin refreshes every five minutes and shows the window closest to exhaustion. **Devin 30% 2d** means 30% remains and that allowance resets in about two days. Shorter countdowns use hours or minutes. If the reset time is missing or has passed, the widget shows just the percentage.
 
 - **Devin.** Open your organization's **Usage & Limits** page in your signed-in browser. In Developer
   Tools → Network, reload the page and select the successful `billing/quota/usage` request.

@@ -1,4 +1,5 @@
 """Quota providers use local fixtures only. No account or external service required."""
+from datetime import UTC, datetime
 import threading
 from unittest.mock import MagicMock
 
@@ -17,11 +18,11 @@ def isolated_weekly_folder(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize(("data", "expected"), [
-    ({"daily_percentage": 0, "weekly_percentage": 82}, "18% 7d"),
-    ({"daily_percentage": 99.5}, "<1% 1d"),
-    ({"daily_percentage": 101}, "0% 1d"),
-    ({"hide_daily_quota": True, "daily_percentage": 100, "weekly_percentage": 1}, "99% 7d"),
-    ({"weekly_percentage": 0}, "100% 7d"),
+    ({"daily_percentage": 0, "weekly_percentage": 82}, "18%"),
+    ({"daily_percentage": 99.5}, "<1%"),
+    ({"daily_percentage": 101}, "0%"),
+    ({"hide_daily_quota": True, "daily_percentage": 100, "weekly_percentage": 1}, "99%"),
+    ({"weekly_percentage": 0}, "100%"),
     ({"weekly_percentage": 100, "has_quota_allocation": False}, "No quota"),
     ({"weekly_percentage": True, "daily_percentage": float("nan")}, "No data"),
 ])
@@ -29,7 +30,40 @@ def test_devin_windows(data, expected):
     assert quotas.devin_readout(data) == expected
 
 
-@pytest.mark.parametrize(("status", "expected"), [(200, "85% 1d"), (401, "Sign in"), (302, "Retry"), (429, "Retry")])
+NOW = datetime(2026, 11, 27, 12, tzinfo=UTC)
+WEEKLY_RESET = "2026-11-29T04:00:00-08:00"
+
+
+@pytest.mark.parametrize(("reset", "expected"), [
+    (WEEKLY_RESET, "30% 2d"),
+    ("2026-11-29T00:00:00Z", "30% 2d"),  # 36 hours rounds to two days on the dashboard.
+    (NOW.timestamp() + 2 * 86400, "30% 2d"),
+    (int((NOW.timestamp() + 2 * 86400) * 1000), "30% 2d"),
+    ("2026-11-27T14:30:00Z", "30% 3h"),
+    ("2026-11-27T12:12:30Z", "30% 13m"),
+    ("2026-11-27T12:00:45Z", "30% <1m"),
+    ("2026-11-27T12:00:00Z", "30%"),
+    ("2026-11-26T12:00:00Z", "30%"),
+    ("2026-11-29T04:00:00", "30%"),
+    ("unknown", "30%"),
+    (float("inf"), "30%"),
+    (True, "30%"),
+])
+def test_devin_countdown_for_selected_window(reset, expected):
+    data = {"weekly_percentage": 70, "weekly_reset_at": reset,
+            "daily_percentage": 10, "daily_reset_at": "2026-11-27T15:00:00Z"}
+    assert quotas.devin_readout(data, now=NOW) == expected
+
+
+def test_devin_honors_window_visibility_when_showing_reset():
+    data = {"weekly_percentage": 70, "weekly_reset_at": WEEKLY_RESET,
+            "daily_percentage": 85, "daily_reset_at": "2026-11-27T15:00:00Z"}
+    assert quotas.devin_readout(data, now=NOW) == "15% 3h"
+    data["hide_daily_quota"] = True
+    assert quotas.devin_readout(data, now=NOW) == "30% 2d"
+
+
+@pytest.mark.parametrize(("status", "expected"), [(200, "85%"), (401, "Sign in"), (302, "Retry"), (429, "Retry")])
 def test_devin_request(monkeypatch, status, expected):
     monkeypatch.setattr(secret_store, "unprotect", lambda *_: "Authorization: Bearer test-fixture")
     connection = MagicMock()
