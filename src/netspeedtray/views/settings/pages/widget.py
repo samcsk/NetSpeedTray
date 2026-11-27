@@ -97,8 +97,17 @@ class WidgetPage(QWidget):
                                      description=self.tr("Use the token from your organization's Usage & Limits page."),
                                      control=self.quota_token_button))
         layout.addWidget(SettingCard(self.tr("ChatGPT weekly limit"),
-                                     description=self.tr("Shows the percentage of your weekly allowance left. Load the companion extension in Chrome or Edge and keep the English usage page open."),
+                                     description=self.tr("Check the percentage left on your English usage page every five minutes in the background."),
                                      control=self.quota_codex))
+        from netspeedtray.core.chatgpt_weekly import sign_in_window
+        self._chatgpt_login = sign_in_window()
+        self.chatgpt_sign_in = QPushButton(self.tr("Sign in…"))
+        self.chatgpt_sign_in.clicked.connect(self._open_chatgpt)
+        self._chatgpt_login.changed.connect(self._sync_chatgpt_login)
+        self._sync_chatgpt_login()
+        layout.addWidget(SettingCard(self.tr("ChatGPT sign-in"),
+                                     description=self.tr("Sign in to ChatGPT in the separate Edge window. Close it when you see your weekly limit."),
+                                     control=self.chatgpt_sign_in))
 
         # --- Placement and visibility (was "Behavior", 2.2.2 D7): which taskbar, dragging, floating, and
         # when the widget steps out of the way (full screen, the app buttons). ---
@@ -178,6 +187,20 @@ class WidgetPage(QWidget):
         layout.addWidget(self.mini_graph_section)
 
         layout.addStretch()
+
+    def _open_chatgpt(self):
+        try:
+            self._chatgpt_login.open()
+        except (OSError, RuntimeError):
+            QMessageBox.warning(self, self.tr("ChatGPT sign-in"),
+                                self.tr("Could not open the sign-in window. Check that Microsoft Edge is installed and your local profile folder is writable."))
+
+    def _sync_chatgpt_login(self):
+        active = self._chatgpt_login.active
+        self.chatgpt_sign_in.setEnabled(not active)
+        self.chatgpt_sign_in.setText(self.tr("Signing in…") if active else self.tr("Sign in…"))
+        if self._chatgpt_login.failed:
+            self.chatgpt_sign_in.setText(self.tr("Try again…"))
 
     def _edit_quota_token(self):
         from netspeedtray.core.quotas import TOKEN_ENTROPY

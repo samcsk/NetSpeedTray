@@ -13,7 +13,7 @@ from netspeedtray.utils.quota_paint import draw_quotas, quota_height, quota_name
 
 @pytest.fixture(autouse=True)
 def isolated_weekly_folder(tmp_path, monkeypatch):
-    monkeypatch.setattr(chatgpt_weekly, "FOLDER", tmp_path / "widget")
+    monkeypatch.setattr(chatgpt_weekly, "profile_dir", lambda: tmp_path / "widget")
 
 
 @pytest.mark.parametrize(("data", "expected"), [

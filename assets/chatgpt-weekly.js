@@ -1,4 +1,4 @@
-// Only the percentage next to the English Weekly limit heading belongs to this card.
+// Read only the remaining percentage on the English Weekly limit card.
 function readWeeklyCard(visibleText) {
     const heading = /^\s*Weekly limit\s*$/im.exec(visibleText);
     if (!heading) return null;

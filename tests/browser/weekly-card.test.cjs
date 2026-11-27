@@ -3,7 +3,7 @@ const {runInNewContext} = require("node:vm");
 const {join} = require("node:path");
 const {test} = require("node:test");
 const assert = require("node:assert/strict");
-const script = readFileSync(join(__dirname, "../../assets/chatgpt-weekly/weekly.js"), "utf8");
+const script = readFileSync(join(__dirname, "../../assets/chatgpt-weekly.js"), "utf8");
 const parse = text => JSON.parse(JSON.stringify(runInNewContext(script + "\nreadWeeklyCard(text)", {text})));
 
 test("selects the weekly fields beside a five-hour limit and manual resets", () => {

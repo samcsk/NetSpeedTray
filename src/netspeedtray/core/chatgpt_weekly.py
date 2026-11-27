@@ -1,66 +1,129 @@
-"""Read the weekly limit shared through the user's dedicated browser connection folder."""
-import json
+"""Read ChatGPT's rendered weekly limit with a dedicated, browser-managed Edge profile."""
+import os
 from pathlib import Path
-import re
-import time
-import uuid
+import subprocess
+import threading
 
-MAX_AGE = 150  # The extension reports once a minute. Expire closed and discarded tabs.
-FOLDER = Path.home() / "NetSpeedTray" / "ChatGPT weekly"
+from PyQt6.QtCore import QCoreApplication, QObject, pyqtSignal
 
-
-def weekly_readout(data):
-    if data is None:
-        return "No data"
-    # Older installed extensions also send reset minutes. Only the balance is needed.
-    left = data.get("left") if isinstance(data, dict) else None
-    if type(left) is not int or not 0 <= left <= 100:
-        raise ValueError("invalid percentage")
-    return f"{left}%"
+USAGE = "https://chatgpt.com/settings/usage"
+TIMEOUT_MS = 15_000
+# A normal sign-in window and a headless poll must never open the profile together.
+_profile_lock = threading.Lock()
 
 
-class WeeklyReceiver:
-    def __init__(self, folder=None):
-        self.folder = folder or FOLDER
-        self.session = uuid.uuid4().hex
-        self._next_heartbeat = 0
+def profile_dir():
+    local = os.environ.get("LOCALAPPDATA") or Path.home() / "AppData" / "Local"
+    return Path(local) / "NetSpeedTray" / "ChatGPTProfile"
 
-    def read(self):
-        try:
-            if time.monotonic() >= self._next_heartbeat:
-                self.folder.mkdir(parents=True, exist_ok=True)
-                pending = self.folder / "active.tmp"
-                pending.write_text(json.dumps({"session": self.session, "time": time.time()}),
-                                   encoding="utf8")
-                pending.replace(self.folder / "active.json")
-                self._next_heartbeat = time.monotonic() + 30
-        except OSError:
-            return "Folder error"
 
-        try:
-            with (self.folder / "browser.json").open("rb") as file:
-                browser = json.loads(file.read(65))
-            if not isinstance(browser, str) or not re.fullmatch(r"[a-f0-9]{32}", browser):
-                return "Open usage"
-            path = self.folder / f"weekly-{browser}.json"
-            with path.open("rb") as file:
-                data = json.loads(file.read(513))
-            if (isinstance(data, dict) and data.get("session") == self.session
-                    and 0 <= time.time() - path.stat().st_mtime < MAX_AGE):
-                return weekly_readout(data["weekly"])
-        except (OSError, ValueError, RecursionError, KeyError):
-            pass
-        return "Open usage"
+def edge_executable():
+    for key in ("ProgramFiles(x86)", "ProgramFiles", "LOCALAPPDATA"):
+        if root := os.environ.get(key):
+            edge = Path(root) / "Microsoft" / "Edge" / "Application" / "msedge.exe"
+            if edge.is_file():
+                return edge
+    return None
 
-    def stop(self):
-        for name in ("active.json", "active.tmp"):
+
+class SignInWindow(QObject):
+    """Share sign-in state between Settings and the poller, including across dialog closes."""
+    changed = pyqtSignal()
+    _finished = pyqtSignal(bool)
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.active = False
+        self.failed = False
+        self._finished.connect(self._closed)
+
+    def open(self):
+        if self.active:
+            return
+        edge = edge_executable()
+        if edge is None:
+            raise FileNotFoundError("Microsoft Edge")
+        folder = profile_dir()
+        folder.mkdir(parents=True, exist_ok=True)
+        self.active = True
+        self.failed = False
+        self.changed.emit()
+
+        def run():
             try:
-                (self.folder / name).unlink(missing_ok=True)
-            except OSError:
-                pass
-        try:
-            for path in self.folder.glob("weekly-*.json"):
-                if re.fullmatch(r"weekly-[a-f0-9]{32}\.json", path.name):
-                    path.unlink(missing_ok=True)
-        except OSError:
-            pass
+                with _profile_lock:
+                    subprocess.run([str(edge), f"--user-data-dir={folder}", "--no-first-run",
+                                    "--disable-background-mode", "--new-window", USAGE], check=True,
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                ok = True
+            except (OSError, subprocess.CalledProcessError):
+                ok = False
+            try:
+                self._finished.emit(ok)
+            except RuntimeError:
+                pass  # Application closed while the user had the sign-in window open.
+
+        threading.Thread(target=run, name="chatgpt-sign-in", daemon=True).start()
+
+    def _closed(self, ok):
+        self.active = False
+        self.failed = not ok
+        self.changed.emit()
+
+
+def sign_in_window():
+    app = QCoreApplication.instance()
+    return app.findChild(SignInWindow) or SignInWindow(app)
+
+
+def read_page(page):
+    """Wait for a client-rendered card, including a genuine zero balance."""
+    from playwright.sync_api import TimeoutError as PlaywrightTimeout
+    from netspeedtray.utils.helpers import get_app_asset_path
+
+    response = page.goto(USAGE, wait_until="domcontentloaded", timeout=TIMEOUT_MS)
+    if response and response.status in (401, 403):
+        return "Sign in"
+    if response and response.status >= 400:
+        return "Retry"
+    parser = get_app_asset_path("chatgpt-weekly.js").read_text(encoding="utf-8")
+    predicate = """() => {
+        if (location.origin !== 'https://chatgpt.com' ||
+            location.pathname.replace(/\\/$/, '') !== '/settings/usage') return 'Sign in';
+        if (!document.body) return false;
+    """ + parser + """
+        const weekly = readWeeklyPage(document.body);
+        if (weekly) return weekly.left + '%';
+        if (document.querySelector('input[autocomplete=username], a[href*="/auth/login"]') ||
+            /^(log in|sign in|verify you are human)$/im.test(document.body.innerText)) return 'Sign in';
+        return false;
+    }"""
+    try:
+        return page.wait_for_function(predicate, polling=300, timeout=TIMEOUT_MS).json_value()
+    except PlaywrightTimeout:
+        return "No data"
+
+
+def fetch_weekly():
+    folder = profile_dir()
+    if not folder.is_dir():
+        return "Sign in"
+    edge = edge_executable()
+    if not edge:
+        return "Get Edge"
+    from playwright.sync_api import sync_playwright
+
+    if not _profile_lock.acquire(blocking=False):
+        return "Sign in"
+    try:
+        with sync_playwright() as playwright:
+            context = playwright.chromium.launch_persistent_context(
+                folder, executable_path=edge, headless=True, chromium_sandbox=True,
+                timeout=TIMEOUT_MS, accept_downloads=False)
+            try:
+                page = context.pages[0] if context.pages else context.new_page()
+                return read_page(page)
+            finally:
+                context.close()
+    finally:
+        _profile_lock.release()

@@ -1,4 +1,4 @@
-"""Poll Devin and display the weekly limit published by the ChatGPT usage tab."""
+"""Poll the enabled Devin and ChatGPT quota providers off the UI thread."""
 from __future__ import annotations
 
 import json
@@ -77,10 +77,9 @@ class QuotaPoller(QObject):
         self._timer.setInterval(POLL_MS)
         self._timer.timeout.connect(self._poll)
         self._finished.connect(self._accept)
-        self._weekly = None
-        self._weekly_timer = QTimer(self)
-        self._weekly_timer.setInterval(3000)
-        self._weekly_timer.timeout.connect(self._read_weekly)
+        from netspeedtray.core.chatgpt_weekly import sign_in_window
+        self._chatgpt_login = sign_in_window()
+        self._chatgpt_login.changed.connect(self._login_changed)
 
     def configure(self, config):
         enabled = {name for name in ("devin", "codex") if config.get(f"quota_{name}", False)}
@@ -92,22 +91,12 @@ class QuotaPoller(QObject):
             self.values.pop("devin", None)
             self._devin_login = login
         self._generation += 1
-        if self._weekly is not None and "codex" not in enabled:
-            self._weekly_timer.stop()
-            self._weekly.stop()
-            self._weekly = None
         for name in self._active.keys() - enabled:
             del self._active[name]
             self.values.pop(name, None)
         for name in enabled - self._active.keys():
             self._active[name] = self._generation
-            if name == "codex":
-                from netspeedtray.core.chatgpt_weekly import WeeklyReceiver
-                self._weekly = WeeklyReceiver()
-                self._weekly_timer.start()
-                self._read_weekly()
-            else:
-                self._start(name)
+            self._start(name)
         if not enabled:
             self._timer.stop()
         elif not self._timer.isActive():
@@ -115,17 +104,23 @@ class QuotaPoller(QObject):
         self.changed.emit()
 
     def _poll(self):
-        if "devin" in self._active:
-            self._start("devin")
+        for name in self._active:
+            self._start(name)
 
-    def _read_weekly(self):
-        value = self._weekly.read()
-        if self.values.get("codex") != value:
-            self.values["codex"] = value
+    def _login_changed(self):
+        if "codex" in self._active:
+            # A result from before an account change must never replace the new balance.
+            self._generation += 1
+            self._active["codex"] = self._generation
+            self.values.pop("codex", None)
+            self._start("codex")
             self.changed.emit()
 
     def _start(self, name):
         generation = self._active[name]
+        if name == "codex" and self._chatgpt_login.active:
+            self.values[name] = "Sign in"
+            return
         if name in self._pending:
             return
         self._pending.add(name)
@@ -133,7 +128,11 @@ class QuotaPoller(QObject):
 
         def run():
             try:
-                value = fetch_devin(*login)
+                if name == "devin":
+                    value = fetch_devin(*login)
+                else:
+                    from netspeedtray.core.chatgpt_weekly import fetch_weekly
+                    value = fetch_weekly()
             except Exception:
                 # Never log provider output, credentials, or an exception containing either.
                 value = "Retry"
