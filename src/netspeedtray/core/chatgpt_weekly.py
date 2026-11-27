@@ -1,6 +1,7 @@
 """Read the weekly limit shared through the user's dedicated browser connection folder."""
 import json
 from pathlib import Path
+import re
 import time
 import uuid
 
@@ -48,7 +49,11 @@ class WeeklyReceiver:
             return "Folder error"
 
         try:
-            path = self.folder / "weekly.json"
+            with (self.folder / "browser.json").open("rb") as file:
+                browser = json.loads(file.read(65))
+            if not isinstance(browser, str) or not re.fullmatch(r"[a-f0-9]{32}", browser):
+                return "Open usage"
+            path = self.folder / f"weekly-{browser}.json"
             with path.open("rb") as file:
                 data = json.loads(file.read(513))
             if (isinstance(data, dict) and data.get("session") == self.session
@@ -59,9 +64,14 @@ class WeeklyReceiver:
         return "Open usage"
 
     def stop(self):
-        for name in ("active.json", "weekly.json", "active.tmp"):
+        for name in ("active.json", "active.tmp"):
             try:
                 (self.folder / name).unlink(missing_ok=True)
             except OSError:
                 pass
-
+        try:
+            for path in self.folder.glob("weekly-*.json"):
+                if re.fullmatch(r"weekly-[a-f0-9]{32}\.json", path.name):
+                    path.unlink(missing_ok=True)
+        except OSError:
+            pass

@@ -6,12 +6,16 @@ async function usageTabs() {
 }
 
 async function sync() {
-    const folder = await connectionFolder();
-    if (!folder || await folder.queryPermission({mode: "readwrite"}) !== "granted") return;
+    const connection = await connectionFolder();
+    if (!connection) return;
+    const {folder, id} = connection;
+    if (await folder.queryPermission({mode: "readwrite"}) !== "granted") return;
     const active = await readActive(folder);
     if (!active) return;
+    const owner = await (await folder.getFileHandle("browser.json")).getFile();
+    if (owner.size > 64 || JSON.parse(await owner.text()) !== id) return;
     async function publish(weekly) {
-        const handle = await folder.getFileHandle("weekly.json", {create: true});
+        const handle = await folder.getFileHandle("weekly-" + id + ".json", {create: true});
         const stream = await handle.createWritable();
         await stream.write(JSON.stringify({session: active.session, weekly}));
         await stream.close();
@@ -44,10 +48,11 @@ chrome.runtime.onStartup.addListener(start);
 chrome.alarms.onAlarm.addListener(alarm => { if (alarm.name === "weekly") tick(); });
 chrome.runtime.onMessage.addListener((message, sender) => {
     if (message === "ready" && sender.tab && sender.frameId === 0) tick();
+    if (message === "open" && sender.url === chrome.runtime.getURL("connect.html")) openUsage();
 });
-chrome.action.onClicked.addListener(async () => {
-    const folder = await connectionFolder();
-    if (!folder || await folder.queryPermission({mode: "readwrite"}) !== "granted") {
+async function openUsage() {
+    const connection = await connectionFolder();
+    if (!connection || await connection.folder.queryPermission({mode: "readwrite"}) !== "granted") {
         await chrome.runtime.openOptionsPage();
         return;
     }
@@ -65,4 +70,5 @@ chrome.action.onClicked.addListener(async () => {
     } else {
         await chrome.tabs.create({url: USAGE});
     }
-});
+}
+chrome.action.onClicked.addListener(openUsage);

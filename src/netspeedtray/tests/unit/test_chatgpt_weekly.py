@@ -9,7 +9,9 @@ def test_weekly_receiver_lifecycle(tmp_path, monkeypatch):
     receiver = weekly.WeeklyReceiver(tmp_path)
     assert receiver.read() == "Open usage"
     marker = json.loads((tmp_path / "active.json").read_text())
-    output = tmp_path / "weekly.json"
+    browser = "a" * 32
+    (tmp_path / "browser.json").write_text(json.dumps(browser))
+    output = tmp_path / f"weekly-{browser}.json"
 
     def publish(value):
         output.write_text(json.dumps({"session": marker["session"], "weekly": value}))
@@ -23,7 +25,7 @@ def test_weekly_receiver_lifecycle(tmp_path, monkeypatch):
     monkeypatch.setattr(weekly, "MAX_AGE", 0)
     assert receiver.read() == "Open usage"
     receiver.stop()
-    assert not list(tmp_path.iterdir())
+    assert list(tmp_path.iterdir()) == [tmp_path / "browser.json"]
     assert weekly.WeeklyReceiver(tmp_path).read() == "Open usage"
 
 

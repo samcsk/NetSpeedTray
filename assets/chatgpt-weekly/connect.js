@@ -3,7 +3,12 @@ document.querySelector("#connect").addEventListener("click", async () => {
     try {
         const folder = await showDirectoryPicker({mode: "readwrite"});
         if (!await readActive(folder)) throw new Error("inactive");
-        await connectionFolder(folder);
+        const id = crypto.randomUUID().replaceAll("-", "");
+        const owner = await folder.getFileHandle("browser.json", {create: true});
+        const stream = await owner.createWritable();
+        await stream.write(JSON.stringify(id));
+        await stream.close();
+        await connectionFolder({folder, id});
         status.textContent = "Connected. Keep one signed-in English usage tab open.";
         document.querySelector("#usage").hidden = false;
     } catch (error) {
@@ -12,3 +17,4 @@ document.querySelector("#connect").addEventListener("click", async () => {
         }
     }
 });
+document.querySelector("#usage").addEventListener("click", () => chrome.runtime.sendMessage("open"));
