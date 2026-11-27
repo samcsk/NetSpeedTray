@@ -15,6 +15,7 @@ SHORT = {"windowDurationMins": 300, "usedPercent": 98}
     ({"rateLimitsByLimitId": {"codex": {"primary": SHORT, "secondary": WEEK}}}, "20%"),
     ({"rateLimits": {"limitId": "codex", "primary": WEEK, "secondary": SHORT}}, "20%"),
     ({"rateLimitsByLimitId": {"codex": {"primary": dict(WEEK, usedPercent=100)}}}, "0%"),
+    ({"rateLimitsByLimitId": {"codex": {"primary": dict(WEEK, usedPercent=101)}}}, "0%"),
     ({"rateLimitsByLimitId": {"codex": {"primary": dict(WEEK, usedPercent=0)}}}, "100%"),
     ({"rateLimitsByLimitId": {"review": {"primary": WEEK}},
       "rateLimits": {"limitId": "codex", "primary": WEEK}}, "No data"),
@@ -27,7 +28,7 @@ def test_weekly_window(payload, expected):
     assert weekly.weekly_readout(payload) == expected
 
 
-@pytest.mark.parametrize("used", [-1, 101, float("nan"), True, None, "12"])
+@pytest.mark.parametrize("used", [-1, float("inf"), float("nan"), True, None, "12"])
 def test_invalid_percentage(used):
     window = dict(WEEK, usedPercent=used)
     assert weekly.weekly_readout({"rateLimitsByLimitId": {"codex": {"primary": window}}}) == "No data"

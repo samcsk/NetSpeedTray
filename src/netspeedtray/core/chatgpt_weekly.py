@@ -1,6 +1,7 @@
 """Read the default Codex seven-day allowance via the bundled OpenAI app-server."""
 from contextlib import contextmanager
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -39,9 +40,9 @@ def weekly_readout(payload):
     if len(windows) != 1:
         return "No data"
     used = windows[0].get("usedPercent")
-    if type(used) not in (int, float) or not 0 <= used <= 100:
+    if type(used) not in (int, float) or not 0 <= used < math.inf:
         return "No data"
-    return f"{100 - used:g}%"
+    return f"{max(0, 100 - used):g}%"
 
 
 class RpcError(Exception):
