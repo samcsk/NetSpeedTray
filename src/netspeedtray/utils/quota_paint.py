@@ -10,17 +10,18 @@ def quota_names(config):
                  if config.get(key, False))
 
 
-def quota_width(fm, names, height):
-    if not names:
-        return 0
-    label = max(names, key=fm.horizontalAdvance)
+def _column_width(fm, name):
     statuses = ("100% 7d", "100% 24h", "100% 60m", "100% <1m",
                 "Reinstall", "Sign in", "No quota", "No data", "Set up", "Retry")
-    if "ChatGPT" in names:
+    if name == "ChatGPT":
         statuses += ("100% 6d 23h", "100% 23h 59m")
     value = max(statuses, key=fm.horizontalAdvance)
-    columns = 1 if height >= len(names) * fm.height() else len(names)
-    return columns * (8 + fm.horizontalAdvance(f"{label}  {value}"))
+    return 8 + fm.horizontalAdvance(f"{name}  {value}")
+
+
+def quota_width(fm, names, height):
+    widths = [_column_width(fm, name) for name in names]
+    return max(widths, default=0) if height >= len(names) * fm.height() else sum(widths)
 
 
 def quota_height(line_height, names):
@@ -45,13 +46,17 @@ def draw_quotas(painter, panel, names, values, vertical, color, fm):
         painter.setClipRect(panel, Qt.ClipOperation.IntersectClip)
         painter.setPen(QColor(color))
         stacked = vertical or panel.height() >= len(names) * fm.height()
-        width = panel.width() if stacked else panel.width() // len(names)
+        x, width = panel.x(), panel.width()
+        if not stacked:
+            widths = [_column_width(fm, name) for name in names]
+            total_width = sum(widths)
         if vertical:
             height = panel.height() // len(names)
         else:
             baseline = panel.y() + first_row_baseline(fm, panel.height(), len(names) if stacked else 1)
         for i, name in enumerate(names):
-            x = panel.x() if stacked else panel.x() + i * width
+            if not stacked:
+                width = widths[i] * panel.width() // total_width
             value = values.get("codex" if name == "ChatGPT" else name.lower(), "…")
             if vertical:
                 y = panel.y() + i * height
@@ -73,5 +78,7 @@ def draw_quotas(painter, panel, names, values, vertical, color, fm):
                     painter.restore()
                 if stacked:
                     baseline += fm.height()
+                else:
+                    x += width
     finally:
         painter.restore()

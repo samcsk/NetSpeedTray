@@ -201,8 +201,10 @@ def test_panel_draws_values_inside_reserved_space(qapp, vertical, height):
         assert panel.height() == quota_height(fm.height(), names)
     else:
         assert base.width() == 160
-        columns = 1 if height >= len(names) * fm.height() else len(names)
-        assert panel.width() // columns >= 8 + fm.horizontalAdvance("ChatGPT  100% 23h 59m")
+        widths = [quota_width(fm, (name,), height) for name in names]
+        assert widths[0] < widths[1]
+        assert widths[1] >= 8 + fm.horizontalAdvance("ChatGPT  100% 23h 59m")
+        assert panel.width() == (max(widths) if height >= len(names) * fm.height() else sum(widths))
     if not QFontDatabase.families():
         pytest.skip("text rasterization requires an installed Qt font")
     def paint(value):
