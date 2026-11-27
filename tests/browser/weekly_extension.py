@@ -60,6 +60,8 @@ def main():
             # The adjacent card renders its balance before its heading. It cannot
             # supply a reading when the weekly card loses its balance.
             usage.locator("section").first.locator("span").evaluate("(node) => node.remove()")
+            usage.locator("section").first.evaluate("""node => node.insertAdjacentHTML("afterend",
+                '<div><span>9% left</span><strong>Another limit</strong></div>')""")
             assert worker.evaluate("""async () => {
                 const [tab] = await usageTabs();
                 return (await chrome.tabs.sendMessage(tab.id, "read")).weekly;

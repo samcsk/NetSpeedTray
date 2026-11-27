@@ -17,10 +17,15 @@ function readWeeklyPage(root) {
     const selector = "article, section, li, [role='group'], [role='region']";
     const peers = new Set();
     const branches = new Set();
+    const weeklyCards = [];
     for (const region of root.querySelectorAll(selector)) {
         if (!region.checkVisibility()) continue;
         const text = region.innerText;
-        if (/^\s*Weekly limit\s*$/im.test(text) || !/\d\s*%\s+left\b/i.test(text)) continue;
+        if (/^\s*Weekly limit\s*$/im.test(text)) {
+            if (region.matches("article, section, li, [role='region']")) weeklyCards.push(region);
+            continue;
+        }
+        if (!/\d\s*%\s+left\b/i.test(text)) continue;
         if (!region.querySelector("h1,h2,h3,h4,h5,h6,[role='heading']") &&
             !/\b(?:limit|quota)s?\b/i.test(text)) continue;
         peers.add(region);
@@ -28,6 +33,8 @@ function readWeeklyPage(root) {
             branches.add(parent);
         }
     }
+    const card = weeklyCards.reverse().find(region => !branches.has(region));
+    if (card) return readWeeklyCard(card.innerText);
     if (!peers.size) return readWeeklyCard(root.innerText);
 
     // Read contiguous fields on either side of peer cards. Each peer ends a block
