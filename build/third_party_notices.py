@@ -32,7 +32,7 @@ from pathlib import Path
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 NOTICES_NAME = "THIRD-PARTY-NOTICES.txt"
 LICENSE_NAME = "LICENSE.txt"   # the repo's LICENSE (GPLv3), shipped with an extension Notepad opens
-SOURCE_URL = "https://github.com/erez-c137/NetSpeedTray"
+SOURCE_URL = "https://github.com/samcsk/NetSpeedTray"
 
 # Every package in requirements.txt: (licence summary, home page). Summaries follow each package's own
 # metadata (License-Expression where it has one). A package missing here stops the build on purpose.
