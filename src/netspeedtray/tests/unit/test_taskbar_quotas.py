@@ -6,9 +6,14 @@ import pytest
 from PyQt6.QtCore import QRect
 from PyQt6.QtGui import QColor, QFont, QFontDatabase, QFontMetrics, QImage, QPainter
 
-from netspeedtray.core import quotas
+from netspeedtray.core import chatgpt_weekly, quotas
 from netspeedtray.utils import secret_store
 from netspeedtray.utils.quota_paint import draw_quotas, quota_height, quota_names, quota_width, split_quota_rect
+
+
+@pytest.fixture(autouse=True)
+def isolated_weekly_folder(tmp_path, monkeypatch):
+    monkeypatch.setattr(chatgpt_weekly, "FOLDER", tmp_path / "widget")
 
 
 @pytest.mark.parametrize(("data", "expected"), [
