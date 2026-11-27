@@ -212,9 +212,64 @@ def test_panel_draws_values_inside_reserved_space(qapp, vertical, height):
         img.fill(QColor("black"))
         painter = QPainter(img)
         painter.setFont(font)
-        draw_quotas(painter, panel, names, {"devin": value, "codex": "71%"}, vertical, "white", fm)
+        draw_quotas(painter, panel, names, {"devin": value, "codex": "28% 6d 21h"}, vertical, "white", fm)
         painter.end()
         return img
     a, b = paint("100% 1d"), paint("Retry")
     assert a.copy(panel) != b.copy(panel)
     assert a.copy(base) == b.copy(base)
+
+
+@pytest.mark.parametrize("height_delta", [-1, 0])
+def test_full_chatgpt_countdown_ink_at_layout_switch(qapp, height_delta):
+    from netspeedtray.utils.font_runs import draw_text, first_row_baseline
+
+    font = QFont("Arial", 9)
+    fm = QFontMetrics(font)
+    height = 2 * fm.height() + height_delta
+    names = ("Devin", "ChatGPT")
+    panel = QRect(0, 0, quota_width(fm, names, height), height)
+    actual = QImage(panel.size(), QImage.Format.Format_ARGB32)
+    actual.fill(QColor("black"))
+    reference = actual.copy()
+    value = "100% 23h 59m"
+    painter = QPainter(actual)
+    painter.setFont(font)
+    draw_quotas(painter, panel, names, {"codex": value}, False, "white", fm)
+    painter.end()
+
+    # Paint the full ChatGPT text without a clipping rectangle, at its expected baseline.
+    if height_delta < 0:
+        area = panel.adjusted(quota_width(fm, ("Devin",), height), 0, 0, 0)
+    else:
+        area = panel.adjusted(0, fm.height(), 0, 0)
+    text = f"ChatGPT  {value}"
+    painter = QPainter(reference)
+    painter.setFont(font)
+    painter.setPen(QColor("white"))
+    draw_text(painter, area.x() + (area.width() - fm.horizontalAdvance(text)) // 2,
+              area.y() + first_row_baseline(fm, area.height(), 1), text)
+    painter.end()
+    assert actual.copy(area) == reference.copy(area)
+
+
+def test_vertical_chatgpt_countdown_keeps_units_that_fit(qapp):
+    font = QFont("Arial", 9)
+    fm = QFontMetrics(font)
+
+    def frame(width, value):
+        panel = QRect(0, 0, width, quota_height(fm.height(), ("ChatGPT",)))
+        image = QImage(panel.size(), QImage.Format.Format_ARGB32)
+        image.fill(QColor("black"))
+        painter = QPainter(image)
+        painter.setFont(font)
+        draw_quotas(painter, panel, ("ChatGPT",), {"codex": value}, True, "white", fm)
+        painter.end()
+        return image
+
+    countdown = "28% 23h 59m"
+    width = fm.horizontalAdvance("28% 23h")
+    assert frame(width, countdown) == frame(width, "28% 23h")
+    assert frame(width, countdown) != frame(width, "28%")
+    width = fm.horizontalAdvance("28%")
+    assert frame(width, countdown) == frame(width, "28%")
