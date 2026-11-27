@@ -15,9 +15,12 @@ test("handles the opposite reading order and a zero balance", () => {
 });
 test("reads the percentage when the card has no reset time", () => {
     assert.deepEqual(parse("Weekly limit\n100% left"), {left: 100});
+    assert.deepEqual(parse("Weekly limit\nResets Monday at 3 PM\n13% left"), {left: 13});
+    assert.deepEqual(parse("Weekly limit\nResets in 2 days 13% left"), {left: 13});
 });
 test("never substitutes another window or the available reset count", () => {
     assert.equal(parse("Weekly limit\nUsage limit resets\nAvailable 3\nResets in 1d 21h\n71% left"), null);
     assert.equal(parse("5-hour limit\nResets in 1h\n71% left"), null);
     assert.equal(parse("Weekly limit\nResets in 1h\n101% left"), null);
+    assert.equal(parse("Weekly limit\nResets tomorrow\n5-hour limit\n71% left"), null);
 });
