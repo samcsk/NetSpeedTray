@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from PyQt6.QtCore import QRect
-from PyQt6.QtGui import QColor, QFont, QFontMetrics, QImage, QPainter
+from PyQt6.QtGui import QColor, QFont, QFontDatabase, QFontMetrics, QImage, QPainter
 
 from netspeedtray.core import quotas
 from netspeedtray.utils import secret_store
@@ -108,6 +108,8 @@ def test_panel_draws_values_inside_reserved_space(qapp, vertical, height):
         assert panel.height() == quota_height(fm.height(), names)
     else:
         assert base.width() == 160
+    if not QFontDatabase.families():
+        pytest.skip("text rasterization requires an installed Qt font")
     def paint(value):
         img = QImage(rect.size(), QImage.Format.Format_ARGB32)
         img.fill(QColor("black"))
