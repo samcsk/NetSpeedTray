@@ -135,7 +135,7 @@ def fetch_codex():
                     if "error" in msg:
                         return "Retry"
                     send({"method": "initialized"})
-                    send({"id": 2, "method": "account/rateLimits/read", "params": {}})
+                    send({"id": 2, "method": "account/rateLimits/read"})
                 elif msg.get("id") == 2:
                     if "error" in msg:
                         message = str(msg["error"]).lower()

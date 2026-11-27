@@ -68,7 +68,7 @@ def reply(data):
 assert read()["method"] == "initialize"
 reply({"id": 1, "result": {}})
 assert read()["method"] == "initialized"
-assert read() == {"id": 2, "method": "account/rateLimits/read", "params": {}}
+assert read() == {"id": 2, "method": "account/rateLimits/read"}
 reply({"method": "account/updated"})
 reply({"id": 2, "result": {"rateLimits": {"primary": {"usedPercent": 75, "windowDurationMins": 300}}}})
 """, encoding="utf8")
