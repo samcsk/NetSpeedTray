@@ -27,4 +27,5 @@ test("never substitutes another window or the available reset count", () => {
     assert.equal(parse("Weekly limit\nResets in 1h\n101% left"), null);
     assert.equal(parse("Weekly limit\nResets tomorrow\n5-hour limit\n71% left"), null);
     assert.equal(parse("Weekly limit\nResets tomorrow 5-hour limit 71% left"), null);
+    assert.equal(parse("Weekly limit\nResets tomorrow 5\u2011hour limit 71% left"), null);
 });

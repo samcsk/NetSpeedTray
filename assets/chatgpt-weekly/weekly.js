@@ -4,7 +4,7 @@ function readWeeklyCard(visibleText) {
     if (!heading) return null;
     // A neighboring time window can render inline. Match its label, not a word in reset copy.
     const rest = visibleText.slice(heading.index + heading[0].length).trimStart();
-    const card = rest.split(/\b\d+[- ](?:hours?|days?|weeks?)\s+(?:limits?|quotas?)\b/i, 1)[0];
+    const card = rest.split(/\b\d+[\p{Dash}\s]+(?:hours?|days?|weeks?)\s+(?:limits?|quotas?)\b/iu, 1)[0];
     // A wrapped duration can span several lines in the card's visible text.
     const fields = card.replace(/^Resets\s+in\s+(?:\d+\s*[dhm]\b[\s,]*)+(?=\d+%)/i, "");
     const percent = /^(?:Resets?\b[^\r\n%]*?\s+)?(\d{1,3})%\s+left\b/i.exec(fields);
