@@ -7,12 +7,11 @@ import os
 import re
 import subprocess
 import threading
-from http.client import HTTPSConnection
 from pathlib import Path
 
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 
-from netspeedtray.utils.https import https_context
+from netspeedtray.utils import https
 
 TOKEN_ENTROPY = b"NetSpeedTray/Devin quota/v1"
 POLL_MS = 5 * 60_000
@@ -65,7 +64,7 @@ def fetch_devin(org, protected_token):
     if not re.fullmatch(r"org[-_][a-zA-Z0-9_-]+", org) or not re.fullmatch(r"[!-~]+", token):
         return "Set up"
     headers = {"Accept": "application/json", "Authorization": f"Bearer {token}", "x-cog-org-id": org}
-    conn = HTTPSConnection("app.devin.ai", timeout=TIMEOUT, context=https_context())
+    conn = https.connection("app.devin.ai", timeout=TIMEOUT)
     try:
         conn.request("GET", f"/api/{org}/billing/quota/usage", headers=headers)
         response = conn.getresponse()

@@ -21,6 +21,7 @@ from __future__ import annotations
 import logging
 import ssl
 import urllib.request
+from http.client import HTTPSConnection
 from typing import Optional
 
 logger = logging.getLogger("NetSpeedTray.HTTPS")
@@ -52,3 +53,8 @@ def urlopen(req: "urllib.request.Request | str", timeout: float,
     """``urllib.request.urlopen`` with :func:`https_context` (redirects keep the same context)."""
     return urllib.request.urlopen(req, timeout=timeout,
                                   context=context if context is not None else https_context())
+
+
+def connection(host: str, timeout: float) -> HTTPSConnection:
+    """Single-origin connection for authenticated requests that must never follow redirects."""
+    return HTTPSConnection(host, timeout=timeout, context=https_context())

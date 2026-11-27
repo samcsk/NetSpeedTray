@@ -96,7 +96,7 @@ class WidgetPage(QWidget):
         layout.addWidget(SettingCard(self.tr("Devin dashboard sign-in"),
                                      description=self.tr("Use the token from your organization's Usage & Limits page."),
                                      control=self.quota_token_button))
-        layout.addWidget(SettingCard(self.tr("ChatGPT (Codex)"),
+        layout.addWidget(SettingCard(self.tr("ChatGPT weekly limit"),
                                      description=self.tr("Uses the ChatGPT account signed in to the Codex CLI. Refreshes every five minutes."),
                                      control=self.quota_codex))
 

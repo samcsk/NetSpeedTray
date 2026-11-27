@@ -40,7 +40,7 @@ def test_devin_request(monkeypatch, status, expected):
     response = connection.return_value.getresponse.return_value
     response.status = status
     response.read.return_value = b'{"daily_percentage":15}'
-    monkeypatch.setattr(quotas, "HTTPSConnection", connection)
+    monkeypatch.setattr(quotas.https, "connection", connection)
     assert quotas.fetch_devin("org-example", "fixture") == expected
     assert connection.call_args.args == ("app.devin.ai",)
     request = connection.return_value.request
@@ -52,7 +52,7 @@ def test_devin_request(monkeypatch, status, expected):
 
 def test_malformed_org_never_contacts_provider(monkeypatch):
     monkeypatch.setattr(secret_store, "unprotect", lambda *_: "fixture")
-    monkeypatch.setattr(quotas, "HTTPSConnection", lambda *_a, **_k: pytest.fail("unexpected network call"))
+    monkeypatch.setattr(quotas.https, "connection", lambda *_a, **_k: pytest.fail("unexpected network call"))
     assert quotas.fetch_devin("//unknown.example", "fixture") == "Set up"
 
 
