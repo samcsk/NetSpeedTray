@@ -85,6 +85,7 @@ installer/
 installer.iss.bak
 
 # Packaged release artifacts
+/assets/codex/codex.exe
 NetSpeedTray-Portable/
 NetSpeedTray-Portable.zip
 

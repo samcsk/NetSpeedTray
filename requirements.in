@@ -14,7 +14,6 @@ PyQt6-Qt6>=6.10.2,<6.11
 PyQt6-sip==13.11.0
 pywin32; sys_platform == "win32"       # Windows-only (no Linux wheels; Dependabot resolves on Linux)
 psutil
-playwright==1.65.2
 matplotlib
 numpy
 wmi; sys_platform == "win32"           # Windows-only (needs pywin32)

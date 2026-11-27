@@ -68,6 +68,12 @@ try {
         Write-Host "  unins000.exe signature (expected unsigned): $((Get-AuthenticodeSignature $uninstaller).Status)"
     }
     if (Test-Path (Join-Path $appDir "portable.marker")) { throw "The installed copy contains portable.marker" }
+    # Verify the actual installed helper against the same pin used by the source/portable build.
+    $codex = Join-Path $appDir "_internal\assets\codex\codex.exe"
+    $pin = Get-Content (Join-Path $PSScriptRoot "..\codex-release.json") -Raw | ConvertFrom-Json
+    if ((Get-FileHash -Algorithm SHA256 $codex).Hash -ne $pin.exe_sha256) {
+        throw "Installed Codex helper differs from the pinned OpenAI executable"
+    }
     # GPLv3 s.4: every copy carries the licence; the bundled libraries' notices travel with it.
     foreach ($doc in @("LICENSE.txt", "THIRD-PARTY-NOTICES.txt")) {
         if (-not (Test-Path (Join-Path $appDir $doc))) { throw "The installed copy is missing $doc" }
