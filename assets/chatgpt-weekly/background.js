@@ -1,4 +1,4 @@
-const USAGE = "https://chatgpt.com/codex/settings/usage";
+const USAGE = "https://chatgpt.com/settings/usage";
 const LOCAL = "http://127.0.0.1:42179";
 
 async function send(path, data) {
@@ -12,7 +12,7 @@ async function send(path, data) {
 async function sync() {
     if (!await send("/ready")) return;
     const tabs = (await chrome.tabs.query({url: USAGE + "*"})).filter(tab =>
-        new URL(tab.url).pathname.replace(/\/$/, "") === "/codex/settings/usage");
+        new URL(tab.url).pathname.replace(/\/$/, "") === "/settings/usage");
     if (tabs.length !== 1) {
         if (tabs.length > 1) await send("/weekly", "null");
         return;

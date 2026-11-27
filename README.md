@@ -42,7 +42,7 @@ Right-click the widget and open **Settings → Widget → AI quotas**. Devin ref
 - **ChatGPT weekly limit.** In Chrome or Edge, open **Extensions → Manage extensions**, turn on
   **Developer mode**, choose **Load unpacked**, and select the `assets/chatgpt-weekly` folder from
   this fork. Enable **ChatGPT weekly limit** in NetSpeedTray and save. Click the extension to open
-  the [usage dashboard](https://chatgpt.com/codex/settings/usage), sign in there, and leave one
+  the [usage dashboard](https://chatgpt.com/settings/usage), sign in there, and leave one
   English-language usage tab open. The extension reads its **Weekly limit** card and refreshes
   the page about every five minutes while the widget is enabled. **ChatGPT 71% · 1d 21h** means
   71% remains, with one day and 21 hours until reset. Authentication stays in the browser.
