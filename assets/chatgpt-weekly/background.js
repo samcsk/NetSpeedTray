@@ -9,7 +9,10 @@ async function sync() {
     const connection = await connectionFolder();
     if (!connection) return;
     const {folder, id} = connection;
-    if (await folder.queryPermission({mode: "readwrite"}) !== "granted") return;
+    if (await folder.queryPermission({mode: "readwrite"}) !== "granted") {
+        await chrome.action.setBadgeText({text: "!"});
+        return;
+    }
     const active = await readActive(folder);
     if (!active) return;
     const owner = await (await folder.getFileHandle("browser.json")).getFile();

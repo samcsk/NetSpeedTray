@@ -47,6 +47,8 @@ Right-click the widget and open **Settings → Widget → AI quotas**. Devin ref
   English-language usage tab open. The extension reads its **Weekly limit** card and refreshes
   the page about every five minutes while the widget is enabled. **ChatGPT 71% · 1d 21h** means
   71% remains, with one day and 21 hours until reset. Authentication stays in the browser.
+  If the extension shows **!** after a browser restart, click it and choose **Allow saved folder**.
+  Select **Allow on every visit** when your browser offers that permission.
 
 **Open usage** means the widget is waiting for the extension or its last reading expired.
 **No data** means the weekly card could not be read or multiple usage tabs were open.
