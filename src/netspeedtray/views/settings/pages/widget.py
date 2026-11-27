@@ -14,7 +14,7 @@ from typing import Dict, Any, Callable, List, Optional
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QGuiApplication
-from PyQt6.QtWidgets import QWidget, QComboBox, QLabel, QLineEdit, QPushButton, QInputDialog, QMessageBox
+from PyQt6.QtWidgets import QWidget, QComboBox, QLabel, QLineEdit, QPushButton, QInputDialog, QMessageBox, QSpinBox
 
 from netspeedtray import constants
 from netspeedtray.utils import styles as su
@@ -80,6 +80,16 @@ class WidgetPage(QWidget):
             self.pos_combos.append(combo)
 
         layout.addWidget(section_header(self.tr("AI quotas")))
+        defaults = constants.config.defaults
+        self.quota_refresh = QSpinBox()
+        self.quota_refresh.setRange(defaults.MIN_QUOTA_REFRESH_SECONDS, defaults.MAX_QUOTA_REFRESH_SECONDS)
+        self.quota_refresh.setValue(defaults.DEFAULT_QUOTA_REFRESH_SECONDS)
+        self.quota_refresh.setSuffix(self.tr(" s"))
+        self.quota_refresh.setKeyboardTracking(False)
+        self.quota_refresh.valueChanged.connect(self.on_change)
+        layout.addWidget(SettingCard(self.tr("Quota refresh interval"),
+                                     description=self.tr("How often to check enabled quota providers."),
+                                     control=self.quota_refresh))
         self.quota_devin = Win11Toggle(label_text="")
         self.quota_codex = Win11Toggle(label_text="")
         self.quota_devin.toggled.connect(self.on_change)
@@ -97,7 +107,7 @@ class WidgetPage(QWidget):
                                      description=self.tr("Use the token from your organization's Usage & Limits page."),
                                      control=self.quota_token_button))
         layout.addWidget(SettingCard(self.tr("ChatGPT weekly limit"),
-                                     description=self.tr("Check the percentage left in your seven-day allowance every five minutes."),
+                                     description=self.tr("Show the percentage left in your seven-day allowance."),
                                      control=self.quota_codex))
         from netspeedtray.core.chatgpt_weekly import sign_in_window
         self._chatgpt_login = sign_in_window()
@@ -420,6 +430,7 @@ class WidgetPage(QWidget):
     def load_settings(self, config: Dict[str, Any]) -> None:
         self.quota_devin.setChecked(config.get("quota_devin", False))
         self.quota_codex.setChecked(config.get("quota_codex", False))
+        self.quota_refresh.setValue(config.get("quota_refresh_seconds", constants.config.defaults.DEFAULT_QUOTA_REFRESH_SECONDS))
         self.quota_org.setText(config.get("quota_devin_org", ""))
         self._set_quota_token(config.get("quota_devin_token_protected", ""))
         mode = config.get("widget_display_mode", "network_only")
@@ -476,6 +487,7 @@ class WidgetPage(QWidget):
             "widget_display_order": order,
             "quota_devin": self.quota_devin.isChecked(),
             "quota_codex": self.quota_codex.isChecked(),
+            "quota_refresh_seconds": self.quota_refresh.value(),
             "quota_devin_org": self.quota_org.text().strip(),
             "quota_devin_token_protected": self._quota_token,
             "preferred_monitor": self.preferred_monitor_combo.currentData(),

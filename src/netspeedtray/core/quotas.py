@@ -10,10 +10,10 @@ import threading
 
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 
+from netspeedtray import constants
 from netspeedtray.utils import https
 
 TOKEN_ENTROPY = b"NetSpeedTray/Devin quota/v1"
-POLL_MS = 5 * 60_000
 TIMEOUT = 15
 MAX_RESPONSE = 256 * 1024
 
@@ -115,7 +115,6 @@ class QuotaPoller(QObject):
         self._generation = 0
         self._devin_login = ("", "")
         self._timer = QTimer(self)
-        self._timer.setInterval(POLL_MS)
         self._timer.timeout.connect(self._poll)
         self._finished.connect(self._accept)
         from netspeedtray.core.chatgpt_weekly import sign_in_window
@@ -128,6 +127,9 @@ class QuotaPoller(QObject):
         return {name: str(reading) for name, reading in self._readings.items()}
 
     def configure(self, config):
+        seconds = config.get("quota_refresh_seconds", constants.config.defaults.DEFAULT_QUOTA_REFRESH_SECONDS)
+        if self._timer.interval() != seconds * 1000:
+            self._timer.setInterval(seconds * 1000)
         enabled = {name for name in ("devin", "codex") if config.get(f"quota_{name}", False)}
         login = (config.get("quota_devin_org", ""), config.get("quota_devin_token_protected", ""))
         if enabled == self._active.keys() and ("devin" not in enabled or login == self._devin_login):

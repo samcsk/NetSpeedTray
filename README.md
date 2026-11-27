@@ -32,7 +32,9 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe src/monitor.py
 ```
 
-Right-click the widget and open **Settings → Widget → AI quotas**. Devin refreshes every five minutes and shows the window closest to exhaustion. **Devin 30% 2d** means 30% remains and that allowance resets in about two days. Shorter countdowns use hours or minutes. If the reset time is missing or has passed, the widget shows just the percentage.
+Right-click the widget and open **Settings → Widget → AI quotas**. Both providers refresh every 30 seconds by default when enabled. To change this, set **Quota refresh interval** to a value from 30 to 3600 seconds and click **Save**.
+
+Devin shows the window closest to exhaustion. **Devin 30% 2d** means 30% remains and that allowance resets in about two days. Shorter countdowns use hours or minutes. If the reset time is missing or has passed, the widget shows just the percentage.
 
 - **Devin.** Open your organization's **Usage & Limits** page in your signed-in browser. In Developer
   Tools → Network, reload the page and select the successful `billing/quota/usage` request.
@@ -42,7 +44,7 @@ Right-click the widget and open **Settings → Widget → AI quotas**. Devin ref
   leave it empty, confirm and save. This integration uses the Devin dashboard's quota endpoint.
 - **ChatGPT weekly limit.** Choose **ChatGPT sign-in → Sign in…** and complete OpenAI sign-in
   in your browser. Enable **ChatGPT weekly limit** and save. NetSpeedTray uses its bundled
-  Codex helper to check the default account's seven-day allowance every five minutes.
+  Codex helper to check the default account's seven-day allowance at the selected interval.
   **ChatGPT 71%** means 71% remains. You can close the browser after sign-in.
   If you used an earlier extension or headless Edge build, sign in once through the new build.
 

@@ -15,7 +15,7 @@ The application is designed to be completely self-contained on your computer. It
   under Windows DPAPI user protection. Both values are redacted from support bundles. For ChatGPT,
   OpenAI's bundled Codex helper manages its own sign-in and stores its account credentials in
   a file under `%LOCALAPPDATA%\NetSpeedTray\CodexQuota` in your Windows user profile.
-  While enabled, NetSpeedTray asks the helper for account rate limits about every five minutes,
+  While enabled, NetSpeedTray asks the helper for account rate limits at the configured quota refresh interval (30 seconds by default),
   displays the remaining seven-day percentage and keeps the reading in memory. To remove the
   local sign-in, quit NetSpeedTray and delete the CodexQuota folder. If you used the earlier
   headless Edge build, you may also remove its old ChatGPTProfile folder.

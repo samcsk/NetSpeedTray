@@ -303,6 +303,9 @@ class ConfigConstants:
     DEFAULT_WIDGET_DISPLAY_MODE: Final[str] = "side_by_side" # Choices: network_only, cycle, side_by_side
     DEFAULT_WIDGET_DISPLAY_ORDER: Final[List[str]] = ["network", "cpu", "gpu"]
     DEFAULT_WIDGET_CYCLE_INTERVAL: Final[int] = 3 # Seconds
+    DEFAULT_QUOTA_REFRESH_SECONDS: Final[int] = 30
+    MIN_QUOTA_REFRESH_SECONDS: Final[int] = 30
+    MAX_QUOTA_REFRESH_SECONDS: Final[int] = 3600
     DEFAULT_CPU_LOAD_HIGH_THRESHOLD: Final[float] = 80.0
     DEFAULT_CPU_LOAD_LOW_THRESHOLD: Final[float] = 50.0
     DEFAULT_GPU_LOAD_HIGH_THRESHOLD: Final[float] = 80.0
@@ -447,6 +450,7 @@ class ConfigConstants:
         # The optional identity indicator remains disabled by default.
         "quota_devin": False,
         "quota_codex": False,
+        "quota_refresh_seconds": DEFAULT_QUOTA_REFRESH_SECONDS,
         "quota_devin_org": "",
         "quota_devin_token_protected": "",
         "show_network_identity": False,
@@ -653,6 +657,8 @@ class ConfigConstants:
         "widget_cycle_interval": {"type": int, "default": DEFAULT_WIDGET_CYCLE_INTERVAL, "min": 1, "max": 60},
         "quota_devin": {"type": bool, "default": False},
         "quota_codex": {"type": bool, "default": False},
+        "quota_refresh_seconds": {"type": int, "default": DEFAULT_QUOTA_REFRESH_SECONDS,
+                                  "min": MIN_QUOTA_REFRESH_SECONDS, "max": MAX_QUOTA_REFRESH_SECONDS},
         "quota_devin_org": {"type": str, "default": ""},
         "quota_devin_token_protected": {"type": str, "default": ""},
         "show_network_identity": {"type": bool, "default": False},

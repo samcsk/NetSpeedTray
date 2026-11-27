@@ -141,6 +141,28 @@ def test_adding_a_provider_keeps_the_scheduled_refresh(qtbot, monkeypatch):
     poller.configure({})
 
 
+def test_reschedule_both_providers_without_refetching_on_save(qtbot, monkeypatch):
+    devin = MagicMock(side_effect=["30%", "29%"])
+    codex = MagicMock(side_effect=["20%", "19%"])
+    monkeypatch.setattr(quotas, "fetch_devin", devin)
+    monkeypatch.setattr(chatgpt_weekly, "fetch_weekly", codex)
+    poller = quotas.QuotaPoller()
+    enabled = {"quota_devin": True, "quota_codex": True}
+    try:
+        poller.configure({**enabled, "quota_refresh_seconds": 300})
+        qtbot.waitUntil(lambda: poller.values == {"devin": "30%", "codex": "20%"})
+        assert poller._timer.interval() == 300_000
+
+        poller.configure({**enabled, "quota_refresh_seconds": 30})
+        assert poller._timer.isActive() and poller._timer.interval() == 30_000
+        assert poller.values == {"devin": "30%", "codex": "20%"}
+        poller._timer.timeout.emit()
+        qtbot.waitUntil(lambda: poller.values == {"devin": "29%", "codex": "19%"})
+        assert devin.call_count == codex.call_count == 2
+    finally:
+        poller.configure({})
+
+
 def test_slow_provider_cannot_overwrite_new_settings(qtbot, monkeypatch):
     started = threading.Event()
     finish = threading.Event()

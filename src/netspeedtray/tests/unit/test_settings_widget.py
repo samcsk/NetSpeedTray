@@ -11,6 +11,19 @@ def page(qt_owned):
     return qt_owned(WidgetPage(I18nStrings("en_US"), lambda: None))
 
 
+def test_quota_interval_survives_save_and_reload(page, tmp_path):
+    from netspeedtray.utils.config import ConfigManager
+
+    path = tmp_path / "widget.json"
+    page.load_settings({})
+    assert page.quota_refresh.value() == page.quota_refresh.minimum() == 30
+    page.quota_refresh.setValue(75)
+    ConfigManager(path).save(page.get_settings())
+    page.quota_refresh.setValue(30)
+    page.load_settings(ConfigManager(path).load())
+    assert page.quota_refresh.value() == 75
+
+
 def test_layout_and_behaviour_round_trip(page):
     page.load_settings({
         "widget_display_mode": "cycle",
