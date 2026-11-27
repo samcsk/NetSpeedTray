@@ -240,7 +240,7 @@ open it.
 | LibreHardwareMonitor | HTTP to `127.0.0.1:8085/data.json` (this PC only) | While temperature or power readings are on, or the Monitor window is open; retried every 30 s while LHM doesn't answer | - | Stop LHM's web server (or don't run LHM) |
 | Metrics endpoint | **Listens** on `127.0.0.1` and `[::1]`, port 9184 | While turned on | **Off** | Settings → Advanced → Integrations |
 | Devin quota | HTTPS to `app.devin.ai` with the configured organization ID and dashboard token | On enable, on credential change and every five minutes | **Off** | Settings → Widget → AI quotas |
-| ChatGPT quota | Chrome/Edge extension reads the open ChatGPT usage tab and sends the weekly percent and countdown to 127.0.0.1:42179 | Checks every minute and refreshes the usage tab about every five minutes while enabled | **Off** | Settings → Widget → AI quotas |
+| ChatGPT quota | Chrome/Edge extension reads the open ChatGPT usage tab and shares the weekly percent and countdown through a user-selected local folder | Checks every minute and refreshes the usage tab about every five minutes while enabled | **Off** | Settings → Widget → AI quotas |
 
 The latency check pings the default gateway of a connected physical adapter (Ethernet or Wi-Fi) when
 the PC has more than one default route, so a full-tunnel VPN's own default route does not turn the

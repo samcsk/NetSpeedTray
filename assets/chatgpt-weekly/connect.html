@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Connect NetSpeedTray</title>
+<style>
+  :root { color-scheme: light dark; font: 16px/1.6 system-ui; }
+  main { max-width: 38rem; margin: 12vh auto; padding: 1.5rem; }
+  button { font: inherit; padding: .5rem 1rem; cursor: pointer; }
+</style>
+<main>
+  <h1>Connect NetSpeedTray</h1>
+  <p>Enable <strong>ChatGPT weekly limit</strong> in NetSpeedTray and save. Choose the widget’s folder below. You can paste this path into the Windows folder picker.</p>
+  <p><code>%USERPROFILE%\NetSpeedTray\ChatGPT weekly</code></p>
+  <button id="connect">Choose widget folder</button>
+  <p id="status" role="status"></p>
+  <a id="usage" hidden href="https://chatgpt.com/settings/usage">Open ChatGPT usage</a>
+</main>
+<script src="folder.js"></script>
+<script src="connect.js"></script>
+</html>

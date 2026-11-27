@@ -14,9 +14,11 @@ The application is designed to be completely self-contained on your computer. It
   dashboard token to `app.devin.ai` over HTTPS to read its quota. The token is stored in settings
   under Windows DPAPI user protection. Both values are redacted from support bundles. For ChatGPT,
   the optional Chrome/Edge extension reads the two values on the weekly limit card in your open usage tab.
-  It sends only the percentage left and minutes until reset to the widget on `127.0.0.1:42179`.
+  It saves the percentage left and minutes until reset in a small snapshot in the dedicated folder you
+  choose (`%USERPROFILE%\NetSpeedTray\ChatGPT weekly`). NetSpeedTray removes the snapshot when you
+  disable the provider or quit normally and ignores readings from previous sessions.
   Sign-in stays in the browser. The extension checks for the widget once a minute and refreshes the
-  usage page about every five minutes while enabled. Quota readings are kept in memory.
+  usage page about every five minutes while enabled.
 
 - **Network Monitoring:** The application monitors your network adapters locally to calculate your current upload and download speeds. It measures the *volume* of traffic (bytes per second) - it never inspects the *content* of your traffic. This information is **only displayed to you** on the widget and is **never sent to any server**.
 - **Wi-Fi band and name (optional, Settings → Network):** If you choose to display the connected Wi-Fi name, NetSpeedTray reads it through `WlanConnectionProfileDetails.GetConnectedSsid`. It does not scan nearby networks, request the location-gated `current_connection` data, or ask for Location permission. The name is cached in memory and refreshed on network changes, on a band change, or after 60 seconds. The optional band is inferred from the same adapter's channel number and refreshed every five seconds. An unavailable name is not retried through the location-gated query. The band and SSID are read locally for display, never stored in the history database, and never transmitted.

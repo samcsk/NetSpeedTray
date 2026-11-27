@@ -1,13 +1,11 @@
-"""Receive the two visible weekly limit fields from the paired Chromium extension."""
+"""Read the weekly limit shared through the user's dedicated browser connection folder."""
 import json
-import threading
+from pathlib import Path
 import time
+import uuid
 
-from netspeedtray.core.metrics_endpoint import LoopbackRequestHandler, _LoopbackHTTPServer
-
-PORT = 42179
-ORIGIN = "chrome-extension://hjjplmkmjappbjiocjimcofbifdjkemn"
-MAX_AGE = 150  # The extension reports once a minute. Also expire a closed or discarded tab.
+MAX_AGE = 150  # The extension reports once a minute. Expire closed and discarded tabs.
+FOLDER = Path.home() / "NetSpeedTray" / "ChatGPT weekly"
 
 
 def weekly_readout(data):
@@ -31,68 +29,39 @@ def weekly_readout(data):
     return f"{left}% · {countdown}"
 
 
-class _WeeklyHandler(LoopbackRequestHandler):
-    def do_POST(self):
-        if (self.headers.get("Host") != f"127.0.0.1:{self.server.server_port}"
-                or self.headers.get("Origin") != ORIGIN):
-            self.send_error(403)
-            return
-        if not self.server.bucket.take():
-            self.send_error(429)
-            return
-        if self.path not in ("/ready", "/weekly"):
-            self.send_error(404)
-            return
-        if self.path == "/weekly":
-            try:
-                length = int(self.headers.get("Content-Length", "0"))
-                if not 0 < length <= 128:
-                    raise ValueError("invalid size")
-                value = weekly_readout(json.loads(self.rfile.read(length)))
-            except (ValueError, RecursionError):
-                self.send_error(400)
-                return
-            self.server.store.publish(value)
-        self.send_response(204)
-        self.end_headers()
-
-    def log_message(self, *_args):
-        pass
-
-
 class WeeklyReceiver:
-    def __init__(self, port=PORT):
-        self._port = port
-        self._server = None
-        self._thread = None
-        self._lock = threading.Lock()
-        self._last = None
+    def __init__(self, folder=None):
+        self.folder = folder or FOLDER
+        self.session = uuid.uuid4().hex
+        self._next_heartbeat = 0
 
     def read(self):
-        if self._server is None:
-            try:
-                self._server = _LoopbackHTTPServer(self._port, self, handler=_WeeklyHandler)
-            except OSError:
-                return "Port busy"
-            self._thread = threading.Thread(target=self._server.serve_forever, args=(0.05,),
-                                            name="quota-weekly", daemon=True)
-            self._thread.start()
-        with self._lock:
-            if self._last and time.monotonic() - self._last[0] < MAX_AGE:
-                return self._last[1]
+        try:
+            if time.monotonic() >= self._next_heartbeat:
+                self.folder.mkdir(parents=True, exist_ok=True)
+                pending = self.folder / "active.tmp"
+                pending.write_text(json.dumps({"session": self.session, "time": time.time()}),
+                                   encoding="utf8")
+                pending.replace(self.folder / "active.json")
+                self._next_heartbeat = time.monotonic() + 30
+        except OSError:
+            return "Folder error"
+
+        try:
+            path = self.folder / "weekly.json"
+            with path.open("rb") as file:
+                data = json.loads(file.read(513))
+            if (isinstance(data, dict) and data.get("session") == self.session
+                    and 0 <= time.time() - path.stat().st_mtime < MAX_AGE):
+                return weekly_readout(data["weekly"])
+        except (OSError, ValueError, RecursionError, KeyError):
+            pass
         return "Open usage"
 
-    def publish(self, value):
-        with self._lock:
-            self._last = (time.monotonic(), value)
-
     def stop(self):
-        if self._server:
-            self._server.stopping.set()
-            self._server.shutdown()
-            self._server.server_close()
-            self._thread.join()
-            self._server.join_handlers(1.0)
-            self._server = self._thread = None
-        with self._lock:
-            self._last = None
+        for name in ("active.json", "weekly.json", "active.tmp"):
+            try:
+                (self.folder / name).unlink(missing_ok=True)
+            except OSError:
+                pass
+

@@ -41,15 +41,16 @@ Right-click the widget and open **Settings → Widget → AI quotas**. Devin ref
   leave it empty, confirm and save. This integration uses the Devin dashboard's quota endpoint.
 - **ChatGPT weekly limit.** In Chrome or Edge, open **Extensions → Manage extensions**, turn on
   **Developer mode**, choose **Load unpacked**, and select the `assets/chatgpt-weekly` folder from
-  this fork. Enable **ChatGPT weekly limit** in NetSpeedTray and save. Click the extension to open
-  the [usage dashboard](https://chatgpt.com/settings/usage), sign in there, and leave one
+  this fork. Enable **ChatGPT weekly limit** in NetSpeedTray and save. Click the extension, choose **Choose widget folder**, and paste
+  `%USERPROFILE%\NetSpeedTray\ChatGPT weekly` into the Windows folder picker. Allow read/write access.
+  Open the [usage dashboard](https://chatgpt.com/settings/usage), sign in there, and leave one
   English-language usage tab open. The extension reads its **Weekly limit** card and refreshes
   the page about every five minutes while the widget is enabled. **ChatGPT 71% · 1d 21h** means
   71% remains, with one day and 21 hours until reset. Authentication stays in the browser.
 
 **Open usage** means the widget is waiting for the extension or its last reading expired.
 **No data** means the weekly card could not be read or multiple usage tabs were open.
-**Port busy** means another process is using local port 42179.
+**Folder error** means the widget could not write to its connection folder.
 **Set up** indicates missing Devin credentials, and **Retry** indicates a failed Devin poll.
 The installer and WinGet command below install upstream NetSpeedTray.
 

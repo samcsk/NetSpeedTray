@@ -335,7 +335,7 @@ class _DeadlineReader(io.RawIOBase):
                 return self._sock.recv_into(buf)
 
 
-class LoopbackRequestHandler(BaseHTTPRequestHandler):
+class _Handler(BaseHTTPRequestHandler):
     server_version = "NetSpeedTray"
     sys_version = ""
     protocol_version = "HTTP/1.0"   # one request per connection: nothing lingers
@@ -352,7 +352,6 @@ class LoopbackRequestHandler(BaseHTTPRequestHandler):
         self.rfile = io.BufferedReader(_DeadlineReader(
             self.connection, time.monotonic() + _M.REQUEST_TIMEOUT_SEC, srv.stopping))
 
-class _Handler(LoopbackRequestHandler):
     # BaseHTTPRequestHandler reads up to 64 KB for the request line; refuse anything longer than a
     # real scrape's well before parsing. Every read below goes through _DeadlineReader.
     def handle_one_request(self) -> None:
@@ -440,7 +439,7 @@ class _LoopbackHTTPServer(ThreadingHTTPServer):
     daemon_threads = True
     block_on_close = False
 
-    def __init__(self, port: int, store, host: str = _M.HOST, *, handler=_Handler) -> None:
+    def __init__(self, port: int, store: SnapshotStore, host: str = _M.HOST) -> None:
         # TCPServer.__init__ creates the socket from this, so it must be set first.
         self.address_family = socket.AF_INET6 if ":" in host else socket.AF_INET
         self.store = store
@@ -452,7 +451,7 @@ class _LoopbackHTTPServer(ThreadingHTTPServer):
         self.stopping = threading.Event()
         self.handler_threads: set = set()
         self._handlers_lock = threading.Lock()
-        super().__init__((host, int(port)), handler)
+        super().__init__((host, int(port)), _Handler)
 
     def server_bind(self) -> None:
         excl = getattr(socket, "SO_EXCLUSIVEADDRUSE", None)
