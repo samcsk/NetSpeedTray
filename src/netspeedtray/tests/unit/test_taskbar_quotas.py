@@ -24,15 +24,6 @@ def test_devin_windows(data, expected):
     assert quotas.devin_readout(data) == expected
 
 
-def test_codex_uses_window_duration_and_preserves_missing_values():
-    result = {"rateLimits": {"primary": {"usedPercent": 60, "windowDurationMins": 300},
-                             "secondary": {"usedPercent": 24, "windowDurationMins": 10080}}}
-    assert quotas.codex_readout(result) == "40% 5h"
-    del result["rateLimits"]["primary"]["usedPercent"]
-    assert quotas.codex_readout(result) == "76% 7d"
-    assert quotas.codex_readout({"rateLimits": {"primary": None}}) == "No data"
-
-
 @pytest.mark.parametrize(("status", "expected"), [(200, "85% 1d"), (401, "Sign in"), (302, "Retry"), (429, "Retry")])
 def test_devin_request(monkeypatch, status, expected):
     monkeypatch.setattr(secret_store, "unprotect", lambda *_: "Authorization: Bearer test-fixture")
@@ -56,56 +47,16 @@ def test_malformed_org_never_contacts_provider(monkeypatch):
     assert quotas.fetch_devin("//unknown.example", "fixture") == "Set up"
 
 
-def test_codex_rpc_handshake(tmp_path, monkeypatch):
-    import sys
-    child = tmp_path / "server.py"
-    child.write_text("""
-import json, sys
-def read():
-    return json.loads(input())
-def reply(data):
-    print(json.dumps(data), flush=True)
-assert read()["method"] == "initialize"
-reply({"id": 1, "result": {}})
-assert read()["method"] == "initialized"
-assert read() == {"id": 2, "method": "account/rateLimits/read"}
-reply({"method": "account/updated"})
-reply({"id": 2, "result": {"rateLimits": {"primary": {"usedPercent": 75, "windowDurationMins": 300}}}})
-""", encoding="utf8")
-    popen = quotas.subprocess.Popen
-    def launch(argv, **kwargs):
-        assert argv == ["codex.exe", "app-server"]
-        return popen([sys.executable, str(child)], **kwargs)
-    monkeypatch.setattr(quotas, "codex_executable", lambda: "codex.exe")
-    monkeypatch.setattr(quotas.subprocess, "Popen", launch)
-    assert quotas.fetch_codex() == "25% 5h"
-
-
-@pytest.mark.parametrize("location", [
-    "codex.exe",
-    "node_modules/@openai/codex/node_modules/@openai/codex-win32-x64/vendor/x86_64-pc-windows-msvc/bin/codex.exe",
-    "node_modules/@openai/codex-win32-arm64/vendor/aarch64-pc-windows-msvc/bin/codex.exe",
-])
-def test_windows_cli_discovery(tmp_path, monkeypatch, location):
-    monkeypatch.setattr(quotas.os, "get_exec_path", lambda: [str(tmp_path)])
-    (tmp_path / "codex.cmd").touch()
-    assert quotas.codex_executable() is None
-    exe = tmp_path / location
-    exe.parent.mkdir(parents=True, exist_ok=True)
-    exe.touch()
-    assert quotas.codex_executable() == exe
-
-
 def test_failed_poll_replaces_old_reading(qtbot, monkeypatch):
-    monkeypatch.setattr(quotas, "fetch_codex", lambda: "22% 5h")
+    monkeypatch.setattr(quotas, "fetch_devin", lambda *_: "22% 1d")
     poller = quotas.QuotaPoller()
-    poller.configure({"quota_codex": True})
-    qtbot.waitUntil(lambda: poller.values.get("codex") == "22% 5h")
-    def offline():
+    poller.configure({"quota_devin": True})
+    qtbot.waitUntil(lambda: poller.values.get("devin") == "22% 1d")
+    def offline(*_args):
         raise OSError("offline")
-    monkeypatch.setattr(quotas, "fetch_codex", offline)
+    monkeypatch.setattr(quotas, "fetch_devin", offline)
     poller._poll()
-    qtbot.waitUntil(lambda: poller.values.get("codex") == "Retry")
+    qtbot.waitUntil(lambda: poller.values.get("devin") == "Retry")
     poller.configure({})
 
 
@@ -129,7 +80,6 @@ def test_slow_provider_cannot_overwrite_new_settings(qtbot, monkeypatch):
             return "99% 1d"
         return "1% 7d"
     monkeypatch.setattr(quotas, "fetch_devin", fetch)
-    monkeypatch.setattr(quotas, "fetch_codex", lambda: "50% 5h")
     poller = quotas.QuotaPoller()
     poller.configure({})
     assert not poller._timer.isActive()
@@ -163,7 +113,7 @@ def test_panel_draws_values_inside_reserved_space(qapp, vertical, height):
         img.fill(QColor("black"))
         painter = QPainter(img)
         painter.setFont(font)
-        draw_quotas(painter, panel, names, {"devin": value, "codex": "52% 5h"}, vertical, "white")
+        draw_quotas(painter, panel, names, {"devin": value, "codex": "71% · 1d 21h"}, vertical, "white")
         painter.end()
         return img
     a, b = paint("100% 1d"), paint("Retry")

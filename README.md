@@ -31,9 +31,7 @@ py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe src/monitor.py
 ```
 
-Right-click the widget and open **Settings → Widget → AI quotas**. Each enabled provider refreshes
-when first enabled and every five minutes thereafter. The taskbar shows the percentage remaining in the
-window closest to exhaustion. For example, **Devin 34% 7d** means the weekly window has 34% left.
+Right-click the widget and open **Settings → Widget → AI quotas**. Devin refreshes every five minutes and shows the window closest to exhaustion. For example, **Devin 34% 7d** means 34% of the weekly allowance remains.
 
 - **Devin.** Open your organization's **Usage & Limits** page in your signed-in browser. In Developer
   Tools → Network, reload the page and select the successful `billing/quota/usage` request.
@@ -41,15 +39,19 @@ window closest to exhaustion. For example, **Devin 34% 7d** means the weekly win
   value under **Set token**. Enable **Devin** and save. Windows protects the token for your user
   account. If **Sign in** appears, repeat this step. To remove the token, choose **Change token**,
   leave it empty, confirm and save. This integration uses the Devin dashboard's quota endpoint.
-- **ChatGPT (Codex).** Install the Windows Codex CLI, run `codex login`, and sign in with your
-  ChatGPT account. Restart NetSpeedTray if you just installed the CLI, enable **ChatGPT (Codex)**,
-  and save. The figure comes from OpenAI's `account/rateLimits/read` and covers your Codex allowance
-  on that account. Individual chat-model message counts are outside its scope.
-  [Codex CLI setup](https://developers.openai.com/codex/cli/) · [App Server API](https://developers.openai.com/codex/app-server/)
+- **ChatGPT weekly limit.** In Chrome or Edge, open **Extensions → Manage extensions**, turn on
+  **Developer mode**, choose **Load unpacked**, and select the `assets/chatgpt-weekly` folder from
+  this fork. Enable **ChatGPT weekly limit** in NetSpeedTray and save. Click the extension to open
+  the [usage dashboard](https://chatgpt.com/codex/settings/usage), sign in there, and leave one
+  English-language usage tab open. The extension reads its **Weekly limit** card and refreshes
+  the page about every five minutes while the widget is enabled. **ChatGPT 71% · 1d 21h** means
+  71% remains, with one day and 21 hours until reset. Authentication stays in the browser.
 
-**Set up** indicates missing Devin credentials. **Install CLI** means NetSpeedTray could not find
-the Codex executable. **Retry** means the poll failed and will run again. **No data** means the
-account returned no usable quota window. The installer and WinGet command below install upstream NetSpeedTray.
+**Open usage** means the widget is waiting for the extension or its last reading expired.
+**No data** means the weekly card could not be read or multiple usage tabs were open.
+**Port busy** means another process is using local port 42179.
+**Set up** indicates missing Devin credentials, and **Retry** indicates a failed Devin poll.
+The installer and WinGet command below install upstream NetSpeedTray.
 
 ```powershell
 winget install --id erez-c137.NetSpeedTray

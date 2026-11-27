@@ -4,14 +4,15 @@ from PyQt6.QtGui import QColor
 
 
 def quota_names(config):
-    return tuple(name for name in ("Devin", "Codex") if config.get(f"quota_{name.lower()}", False))
+    return tuple(label for label, key in (("Devin", "quota_devin"), ("ChatGPT", "quota_codex"))
+                 if config.get(key, False))
 
 
 def quota_width(fm, names, height):
     if not names:
         return 0
     label = max(fm.horizontalAdvance(name) for name in names)
-    value = max(fm.horizontalAdvance(text) for text in ("100% 88888m", "Install CLI", "No quota"))
+    value = max(fm.horizontalAdvance(text) for text in ("100% · 23h 59m", "100% · 6d 23h", "Open usage", "No quota"))
     columns = 1 if height >= len(names) * fm.height() else len(names)
     return columns * (8 + label + fm.horizontalAdvance("  ") + value)
 
@@ -44,7 +45,7 @@ def draw_quotas(painter, panel, names, values, vertical, color):
         for i, name in enumerate(names):
             x = panel.x() if stacked else panel.x() + i * width
             y = panel.y() + i * height if stacked else panel.y()
-            value = values.get(name.lower(), "…")
+            value = values.get("codex" if name == "ChatGPT" else name.lower(), "…")
             if vertical:
                 half = height // 2
                 if fm.horizontalAdvance(value) > width and "%" in value:

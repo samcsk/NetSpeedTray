@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "NetSpeedTray weekly limit",
+  "version": "1.0.0",
+  "description": "Show the weekly limit from your open ChatGPT usage tab on your Windows taskbar.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAomidRraSgpT4h62gClRVejw6YLr0bmPUkKy65PJL8dYXOHt9DYN72NSUYApT50HygoG8ltc8wg8nHvLV1S3kV2S3NtxWF7V6AslyGYpDVSHtnqZ1he5H9Ak+8hJcHML0GdvnOi0SsiB3zJSr3RaDbRJ6wxNldzl8bJbc6yJ7ifWU+rv0Gz/kOGwumEZb4l3ZBuOhvOytV4M7V6NPUInW91h9iAaPjOb22g8naWqONXhs+tf4hzh6yglbXkVmSukydnyNlxGXVvoWHH6+p1d1COwi3kbjvz7lDYOhEU+e6IbqPT4n2SPFHCwJE/YjmuFladbMa2GQyXb2cApzYjurUQIDAQAB",
+  "permissions": ["alarms"],
+  "host_permissions": ["http://127.0.0.1/*", "https://chatgpt.com/codex/settings/usage*"],
+  "background": {"service_worker": "background.js"},
+  "content_scripts": [{
+    "matches": ["https://chatgpt.com/codex/settings/usage*"],
+    "js": ["weekly.js", "dashboard.js"]
+  }],
+  "action": {"default_title": "Open ChatGPT weekly usage"}
+}

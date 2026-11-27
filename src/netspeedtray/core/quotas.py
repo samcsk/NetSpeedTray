@@ -1,13 +1,10 @@
-"""Read the Devin dashboard quota and Codex account limits. No provider starts a session."""
+"""Poll Devin and display the weekly limit published by the ChatGPT usage tab."""
 from __future__ import annotations
 
 import json
 import math
-import os
 import re
-import subprocess
 import threading
-from pathlib import Path
 
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 
@@ -38,25 +35,6 @@ def devin_readout(data):
                      if not data.get(f"hide_{window}_quota"))
 
 
-def codex_readout(result):
-    limits = result.get("rateLimits") or {}
-    windows = []
-    for key in ("primary", "secondary"):
-        window = limits.get(key)
-        if isinstance(window, dict):
-            minutes = window.get("windowDurationMins")
-            label = ""
-            if type(minutes) is int and 0 < minutes <= 99999:
-                if minutes % 1440 == 0:
-                    label = f"{minutes // 1440}d"
-                elif minutes % 60 == 0:
-                    label = f"{minutes // 60}h"
-                else:
-                    label = f"{minutes}m"
-            windows.append((window.get("usedPercent"), label))
-    return remaining(windows)
-
-
 def fetch_devin(org, protected_token):
     from netspeedtray.utils.secret_store import unprotect
     token = (unprotect(protected_token, TOKEN_ENTROPY) or "").strip()
@@ -84,67 +62,6 @@ def fetch_devin(org, protected_token):
         conn.close()
 
 
-def codex_executable():
-    """Native executable, including OpenAI's global npm package behind its Windows .cmd shim."""
-    for entry in os.get_exec_path():
-        directory = Path(entry.strip('"'))
-        if not directory.is_absolute():
-            continue
-        exe = directory / "codex.exe"
-        if exe.is_file():
-            return exe
-        if (directory / "codex.cmd").is_file():
-            package = directory / "node_modules" / "@openai" / "codex"
-            vendors = [package / "vendor"]
-            vendors.extend(package.glob("node_modules/@openai/codex-win32-*/vendor"))
-            vendors.extend(package.parent.glob("codex-win32-*/vendor"))
-            for vendor in vendors:
-                for name in ("bin", "codex"):
-                    exe = next(vendor.glob(f"*-pc-windows-msvc/{name}/codex.exe"), None)
-                    if exe and exe.is_file():
-                        return exe
-    return None
-
-
-def fetch_codex():
-    executable = codex_executable()
-    if not executable:
-        return "Install CLI"
-    # Keep stdin open until the correlated response arrives. EOF immediately after sending the
-    # request can make app-server exit before answering. Bound the whole exchange, including reads.
-    with subprocess.Popen([str(executable), "app-server"], cwd=Path.home(),
-                          stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                          creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)) as proc:
-        deadline = threading.Timer(TIMEOUT, proc.kill)
-        deadline.start()
-        def send(message):
-            proc.stdin.write(json.dumps(message).encode() + b"\n")
-            proc.stdin.flush()
-
-        try:
-            send({"id": 1, "method": "initialize", "params": {
-                "clientInfo": {"name": "netspeedtray", "title": "NetSpeedTray", "version": "1"},
-            }})
-            while True:
-                line = proc.stdout.readline(MAX_RESPONSE + 1)
-                if not line or len(line) > MAX_RESPONSE:
-                    return "Retry"
-                msg = json.loads(line)
-                if msg.get("id") == 1:
-                    if "error" in msg:
-                        return "Retry"
-                    send({"method": "initialized"})
-                    send({"id": 2, "method": "account/rateLimits/read"})
-                elif msg.get("id") == 2:
-                    if "error" in msg:
-                        message = str(msg["error"]).lower()
-                        return "Sign in" if any(k in message for k in ("login", "auth", "sign in")) else "Retry"
-                    return codex_readout(msg["result"])
-        finally:
-            deadline.cancel()
-            proc.kill()
-
-
 class QuotaPoller(QObject):
     changed = pyqtSignal()
     _finished = pyqtSignal(str, int, str)
@@ -160,6 +77,10 @@ class QuotaPoller(QObject):
         self._timer.setInterval(POLL_MS)
         self._timer.timeout.connect(self._poll)
         self._finished.connect(self._accept)
+        self._weekly = None
+        self._weekly_timer = QTimer(self)
+        self._weekly_timer.setInterval(3000)
+        self._weekly_timer.timeout.connect(self._read_weekly)
 
     def configure(self, config):
         enabled = {name for name in ("devin", "codex") if config.get(f"quota_{name}", False)}
@@ -171,12 +92,22 @@ class QuotaPoller(QObject):
             self.values.pop("devin", None)
             self._devin_login = login
         self._generation += 1
+        if self._weekly is not None and "codex" not in enabled:
+            self._weekly_timer.stop()
+            self._weekly.stop()
+            self._weekly = None
         for name in self._active.keys() - enabled:
             del self._active[name]
             self.values.pop(name, None)
         for name in enabled - self._active.keys():
             self._active[name] = self._generation
-            self._start(name)
+            if name == "codex":
+                from netspeedtray.core.chatgpt_weekly import WeeklyReceiver
+                self._weekly = WeeklyReceiver()
+                self._weekly_timer.start()
+                self._read_weekly()
+            else:
+                self._start(name)
         if not enabled:
             self._timer.stop()
         elif not self._timer.isActive():
@@ -184,8 +115,14 @@ class QuotaPoller(QObject):
         self.changed.emit()
 
     def _poll(self):
-        for name in self._active:
-            self._start(name)
+        if "devin" in self._active:
+            self._start("devin")
+
+    def _read_weekly(self):
+        value = self._weekly.read()
+        if self.values.get("codex") != value:
+            self.values["codex"] = value
+            self.changed.emit()
 
     def _start(self, name):
         generation = self._active[name]
@@ -196,7 +133,7 @@ class QuotaPoller(QObject):
 
         def run():
             try:
-                value = fetch_devin(*login) if name == "devin" else fetch_codex()
+                value = fetch_devin(*login)
             except Exception:
                 # Never log provider output, credentials, or an exception containing either.
                 value = "Retry"
