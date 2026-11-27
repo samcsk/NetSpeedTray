@@ -25,8 +25,8 @@ from netspeedtray.utils.timer_utils import graph_sample_seconds
 from netspeedtray.utils import hardware_vendors
 from netspeedtray.utils import color_scheme
 from netspeedtray.utils.quota_paint import quota_names
-from netspeedtray.utils.font_runs import (WidgetFontMetrics, draw_text, draw_text_centered, set_text_language,
-                                         user_text_advance)
+from netspeedtray.utils.font_runs import (WidgetFontMetrics, draw_text, draw_text_centered, first_row_baseline,
+                                         set_text_language, user_text_advance)
 
 # v2.1 network-identity band tag, drawn as a rounded pill/badge. The layout RESERVES the fixed
 # worst-case slot and the renderer DRAWS the actual (usually narrower) tag in it - both MUST use these
@@ -1536,12 +1536,7 @@ class WidgetRenderer:
             painter.setFont(self.font)
 
             line_height = self.metrics.height()
-            ascent = self.metrics.ascent()
-            total_height = line_height * len(enabled_stats)
-            top_y = int((height - total_height) / 2 + ascent)
-
             margin = constants.renderer.TEXT_MARGIN
-            current_x = x_offset + margin
 
             is_compact = getattr(config, 'widget_display_mode', 'network_only') == "compact_stack" or len(enabled_stats) > 1
 
@@ -1622,8 +1617,9 @@ class WidgetRenderer:
             mem_only_w = memory_only_row_width(self.metrics, mem_num_col, lone_label) if mem_only_rows else 0
 
             extra_rows = 0 if inline_mem else sum(1 for r in stat_rows if r['mem'])
-            total_height = line_height * (len(rows) + extra_rows)
-            top_y = y_offset + int((height - total_height) / 2 + ascent)
+            row_count = len(rows) + extra_rows
+            total_height = line_height * row_count
+            top_y = y_offset + first_row_baseline(self.metrics, height, row_count)
             current_x = x_offset + margin
 
             stat_col = (label_col + pct_col + suffix_col + mem_col) if stat_rows else 0

@@ -1053,9 +1053,9 @@ def _draw_content(painter: QPainter, rect: QRect, renderer: WidgetRenderer, conf
     _draw_stats(painter, rect, renderer, config, metrics, layout_mode=layout_mode,
                 cycle_mode=cycle_mode, network_width=network_width, font=font)
     if names:
-        if font is not None:
-            painter.setFont(font)
-        draw_quotas(painter, panel, names, metrics.quotas, layout_mode == "vertical", config.default_color)
+        painter.setFont(renderer.font)
+        draw_quotas(painter, panel, names, metrics.quotas, layout_mode == "vertical",
+                    config.default_color, renderer.metrics)
         renderer._extend_content_bounds(panel)
 
 

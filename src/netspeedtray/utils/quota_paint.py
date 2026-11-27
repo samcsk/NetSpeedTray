@@ -2,6 +2,8 @@
 from PyQt6.QtCore import QRect, Qt
 from PyQt6.QtGui import QColor
 
+from netspeedtray.utils.font_runs import draw_text, first_row_baseline
+
 
 def quota_names(config):
     return tuple(label for label, key in (("Devin", "quota_devin"), ("ChatGPT", "quota_codex"))
@@ -35,20 +37,22 @@ def split_quota_rect(rect, fm, names, vertical):
     return base, panel
 
 
-def draw_quotas(painter, panel, names, values, vertical, color):
+def draw_quotas(painter, panel, names, values, vertical, color, fm):
     painter.save()
     try:
         painter.setClipRect(panel, Qt.ClipOperation.IntersectClip)
         painter.setPen(QColor(color))
-        fm = painter.fontMetrics()
         stacked = vertical or panel.height() >= len(names) * fm.height()
         width = panel.width() if stacked else panel.width() // len(names)
-        height = panel.height() // len(names) if stacked else panel.height()
+        if vertical:
+            height = panel.height() // len(names)
+        else:
+            baseline = panel.y() + first_row_baseline(fm, panel.height(), len(names) if stacked else 1)
         for i, name in enumerate(names):
             x = panel.x() if stacked else panel.x() + i * width
-            y = panel.y() + i * height if stacked else panel.y()
             value = values.get("codex" if name == "ChatGPT" else name.lower(), "…")
             if vertical:
+                y = panel.y() + i * height
                 half = height // 2
                 if fm.horizontalAdvance(value) > width and "%" in value:
                     value = value.split()[0]
@@ -56,7 +60,16 @@ def draw_quotas(painter, panel, names, values, vertical, color):
                 painter.drawText(QRect(x, y + half, width, height - half), Qt.AlignmentFlag.AlignCenter,
                                  fm.elidedText(value, Qt.TextElideMode.ElideRight, width))
             else:
-                painter.drawText(QRect(x + 4, y, width - 8, height),
-                                 Qt.AlignmentFlag.AlignCenter, f"{name}  {value}")
+                text = f"{name}  {value}"
+                text_x = x + (width - fm.horizontalAdvance(text)) // 2
+                painter.save()
+                try:
+                    painter.setClipRect(QRect(x + 4, panel.y(), max(0, width - 8), panel.height()),
+                                        Qt.ClipOperation.IntersectClip)
+                    draw_text(painter, text_x, baseline, text)
+                finally:
+                    painter.restore()
+                if stacked:
+                    baseline += fm.height()
     finally:
         painter.restore()

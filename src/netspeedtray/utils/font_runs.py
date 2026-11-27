@@ -547,6 +547,11 @@ def user_text_advance(fm, text: str) -> int:
     return fm.user_advance(text) if isinstance(fm, WidgetFontMetrics) else fm.horizontalAdvance(text)
 
 
+def first_row_baseline(fm, height: int, rows: int) -> int:
+    """Baseline of the first of several consecutive text lines centered in a band."""
+    return int((height - rows * fm.height()) / 2 + fm.ascent())
+
+
 def draw_text(painter, x, y, text: str, user: bool = False) -> None:
     """painter.drawText(x, y, text) in the painter's font: a string the face covers as before, known-face
     runs on one baseline, the Qt path exactly as 2.2.0 drew it."""

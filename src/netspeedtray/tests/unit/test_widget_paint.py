@@ -89,6 +89,39 @@ def test_quota_values_affect_only_the_enabled_panel(q_app):
     assert disabled == frame()
 
 
+@pytest.mark.parametrize("height", [48, 61])
+def test_stacked_quota_digits_align_with_hardware_rows(q_app, height):
+    from netspeedtray.utils.quota_paint import split_quota_rect
+
+    cfg = _base_config(widget_display_mode="side_by_side", stack_hardware_stats=True,
+                       quota_devin=True, quota_codex=True, graph_enabled=False,
+                       font_size=9, font_family="Consolas")
+    renderer = WidgetRenderer(cfg, I18nStrings("en_US"))
+    rect = QRect(0, 0, 800, height)
+    base, panel = split_quota_rect(rect, renderer.metrics, renderer.config.quota_names, False)
+
+    def frame(digits):
+        metrics = WidgetMetrics(cpu_usage=digits, gpu_usage=digits,
+                                quotas={"devin": f"{digits}% 2d", "codex": f"{digits}%"})
+        img = QImage(rect.size(), QImage.Format.Format_ARGB32)
+        img.fill(QColor("black"))
+        painter = QPainter(img)
+        try:
+            render_widget(painter, rect, renderer, renderer.config, metrics, font=renderer.font)
+        finally:
+            painter.end()
+        return img
+
+    before, after = frame(44), frame(88)
+
+    def changed_rows(area):
+        return [y for y in range(height)
+                if before.copy(area.x(), y, area.width(), 1) != after.copy(area.x(), y, area.width(), 1)]
+
+    hardware = changed_rows(base)
+    assert hardware and changed_rows(panel) == hardware
+
+
 def test_render_widget_reflects_config(q_app):
     # A robust, font-substitution-proof check that config actually drives the output:
     # a larger font paints more solid glyph pixels. (Arrow-glyph swaps are visible on real
