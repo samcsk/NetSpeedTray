@@ -1,6 +1,7 @@
 """Poll the enabled Devin and ChatGPT quota providers off the UI thread."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 import json
 import math
@@ -17,18 +18,22 @@ TIMEOUT = 15
 MAX_RESPONSE = 256 * 1024
 
 
-def _reset_countdown(value, now: datetime) -> str:
+def _parse_reset(value) -> datetime | None:
     try:
         if isinstance(value, str):
             reset = datetime.fromisoformat(value)
-            if reset.tzinfo is None:
-                return ""
-        elif type(value) in (int, float):
+            return reset if reset.tzinfo is not None else None
+        if type(value) in (int, float):
             # The API can represent the same instant in Unix seconds or milliseconds.
             seconds = value / 1000 if value >= 100_000_000_000 else value
-            reset = datetime.fromtimestamp(seconds, UTC)
-        else:
-            return ""
+            return datetime.fromtimestamp(seconds, UTC)
+    except (ValueError, OverflowError, OSError):
+        pass
+    return None
+
+
+def _reset_countdown(reset: datetime, now: datetime) -> str:
+    try:
         seconds = (reset - now).total_seconds()
         if seconds >= 86400:
             # The Usage & Limits page rounds days using local wall time across DST.
@@ -45,7 +50,17 @@ def _reset_countdown(value, now: datetime) -> str:
     return "<1m" if seconds > 0 else ""
 
 
-def devin_readout(data, *, now: datetime | None = None):
+@dataclass(frozen=True)
+class DevinReading:
+    percentage: str
+    reset_at: datetime | None
+
+    def __str__(self):
+        countdown = _reset_countdown(self.reset_at, datetime.now(UTC)) if self.reset_at else ""
+        return f"{self.percentage} {countdown}".rstrip()
+
+
+def devin_readout(data) -> DevinReading | str:
     if data.get("is_quota_plan") is False or data.get("has_quota_allocation") is False:
         return "No quota"
     windows = []
@@ -57,8 +72,7 @@ def devin_readout(data, *, now: datetime | None = None):
         return "No data"
     used, reset = max(windows, key=lambda entry: entry[0])
     percent = "<1" if 99 < used < 100 else str(round(100 - min(used, 100)))
-    countdown = _reset_countdown(reset, now or datetime.now(UTC))
-    return f"{percent}% {countdown}".rstrip()
+    return DevinReading(f"{percent}%", _parse_reset(reset))
 
 
 def fetch_devin(org, protected_token):
@@ -91,11 +105,11 @@ def fetch_devin(org, protected_token):
 class QuotaPoller(QObject):
     changed = pyqtSignal()
     account_changed = pyqtSignal(str)
-    _finished = pyqtSignal(str, int, str)
+    _finished = pyqtSignal(str, int, object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.values = {}
+        self._readings = {}
         self._active = {}   # provider -> generation that enabled it
         self._pending = set()
         self._generation = 0
@@ -108,6 +122,11 @@ class QuotaPoller(QObject):
         self._chatgpt_login = sign_in_window()
         self._chatgpt_login.changed.connect(self._login_changed)
 
+    @property
+    def values(self):
+        # Each widget paint gets the current countdown. Pause takes its own text snapshot.
+        return {name: str(reading) for name, reading in self._readings.items()}
+
     def configure(self, config):
         enabled = {name for name in ("devin", "codex") if config.get(f"quota_{name}", False)}
         login = (config.get("quota_devin_org", ""), config.get("quota_devin_token_protected", ""))
@@ -115,12 +134,12 @@ class QuotaPoller(QObject):
             return
         if login != self._devin_login:
             self._active.pop("devin", None)
-            self.values.pop("devin", None)
+            self._readings.pop("devin", None)
             self._devin_login = login
         self._generation += 1
         for name in self._active.keys() - enabled:
             del self._active[name]
-            self.values.pop(name, None)
+            self._readings.pop(name, None)
         for name in enabled - self._active.keys():
             self._active[name] = self._generation
             self._start(name)
@@ -139,7 +158,7 @@ class QuotaPoller(QObject):
             # A result from before an account change must never replace the new balance.
             self._generation += 1
             self._active["codex"] = self._generation
-            self.values.pop("codex", None)
+            self._readings.pop("codex", None)
             self.account_changed.emit("codex")
             self._start("codex")
             self.changed.emit()
@@ -147,7 +166,7 @@ class QuotaPoller(QObject):
     def _start(self, name):
         generation = self._active[name]
         if name == "codex" and self._chatgpt_login.active:
-            self.values[name] = "Sign in"
+            self._readings[name] = "Sign in"
             return
         if name in self._pending:
             return
@@ -174,7 +193,7 @@ class QuotaPoller(QObject):
     def _accept(self, name, generation, value):
         self._pending.discard(name)
         if self._active.get(name) == generation:
-            self.values[name] = value
+            self._readings[name] = value
             self.changed.emit()
         elif name in self._active:
             self._start(name)

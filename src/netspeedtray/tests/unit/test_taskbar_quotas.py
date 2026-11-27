@@ -1,5 +1,5 @@
 """Quota providers use local fixtures only. No account or external service required."""
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 import threading
 from unittest.mock import MagicMock
 
@@ -27,11 +27,24 @@ def isolated_weekly_folder(tmp_path, monkeypatch):
     ({"weekly_percentage": True, "daily_percentage": float("nan")}, "No data"),
 ])
 def test_devin_windows(data, expected):
-    assert quotas.devin_readout(data) == expected
+    assert str(quotas.devin_readout(data)) == expected
 
 
 NOW = datetime(2026, 11, 27, 12, tzinfo=UTC)
 WEEKLY_RESET = "2026-11-29T04:00:00-08:00"
+
+
+@pytest.fixture
+def clock(monkeypatch):
+    class Clock(datetime):
+        instant = NOW
+
+        @classmethod
+        def now(cls, tz):
+            return cls.instant.astimezone(tz)
+
+    monkeypatch.setattr(quotas, "datetime", Clock)
+    return Clock
 
 
 @pytest.mark.parametrize(("reset", "expected"), [
@@ -49,18 +62,37 @@ WEEKLY_RESET = "2026-11-29T04:00:00-08:00"
     (float("inf"), "30%"),
     (True, "30%"),
 ])
-def test_devin_countdown_for_selected_window(reset, expected):
+def test_devin_countdown_for_selected_window(reset, expected, clock):
     data = {"weekly_percentage": 70, "weekly_reset_at": reset,
             "daily_percentage": 10, "daily_reset_at": "2026-11-27T15:00:00Z"}
-    assert quotas.devin_readout(data, now=NOW) == expected
+    assert str(quotas.devin_readout(data)) == expected
 
 
-def test_devin_honors_window_visibility_when_showing_reset():
+def test_devin_honors_window_visibility_when_showing_reset(clock):
     data = {"weekly_percentage": 70, "weekly_reset_at": WEEKLY_RESET,
             "daily_percentage": 85, "daily_reset_at": "2026-11-27T15:00:00Z"}
-    assert quotas.devin_readout(data, now=NOW) == "15% 3h"
+    assert str(quotas.devin_readout(data)) == "15% 3h"
     data["hide_daily_quota"] = True
-    assert quotas.devin_readout(data, now=NOW) == "30% 2d"
+    assert str(quotas.devin_readout(data)) == "30% 2d"
+
+
+def test_countdown_expires_between_polls(qtbot, monkeypatch, clock):
+    data = {"weekly_percentage": 70, "weekly_reset_at": (NOW + timedelta(minutes=2)).timestamp()}
+    fetch = MagicMock(return_value=quotas.devin_readout(data))
+    monkeypatch.setattr(quotas, "fetch_devin", fetch)
+    poller = quotas.QuotaPoller()
+    poller.configure({"quota_devin": True})
+    try:
+        qtbot.waitUntil(lambda: poller.values.get("devin") == "30% 2m")
+        paused = dict(poller.values)
+        clock.instant += timedelta(seconds=90)
+        assert poller.values["devin"] == "30% <1m"
+        clock.instant += timedelta(seconds=30)
+        assert poller.values["devin"] == "30%"
+        assert paused == {"devin": "30% 2m"}
+        fetch.assert_called_once()
+    finally:
+        poller.configure({})
 
 
 @pytest.mark.parametrize(("status", "expected"), [(200, "85%"), (401, "Sign in"), (302, "Retry"), (429, "Retry")])
@@ -71,7 +103,7 @@ def test_devin_request(monkeypatch, status, expected):
     response.status = status
     response.read.return_value = b'{"daily_percentage":15}'
     monkeypatch.setattr(quotas.https, "connection", connection)
-    assert quotas.fetch_devin("org-example", "fixture") == expected
+    assert str(quotas.fetch_devin("org-example", "fixture")) == expected
     assert connection.call_args.args == ("app.devin.ai",)
     request = connection.return_value.request
     assert request.call_args.args == ("GET", "/api/org-example/billing/quota/usage")
