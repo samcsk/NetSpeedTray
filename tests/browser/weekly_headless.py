@@ -17,17 +17,26 @@ CASES = [
     (PEER + "<div style='display:contents'><h2>Weekly limit</h2>"
             "<span>Resets </span><span>tomorrow</span><p><span>0</span><span>% left</span></p></div>", "0%"),
     ("<button>Log in</button>", "Sign in"),
+    ("<p>Verify you are human</p>", "Blocked"),
     ("<h2>Weekly limit</h2><script>setTimeout(() => document.body.append('88% left'), 150)</script>", "88%"),
 ]
 
 
 def main():
     with TemporaryDirectory() as root, sync_playwright() as driver:
-        for body, expected in CASES:
+        documents = [(dict(body=body), expected) for body, expected in CASES]
+        documents.extend([
+            (dict(status=403, headers={"cf-mitigated": "challenge"}, body="<p>Checking…</p>"), "Blocked"),
+            (dict(status=200, headers={"cf-mitigated": "challenge"}, body="<p>Checking…</p>"), "Blocked"),
+            (dict(status=403, body="<p>Forbidden</p>"), "Blocked"),
+            (dict(status=401, body="<p>Unauthorized</p>"), "Sign in"),
+            (dict(status=429, body="<p>Too many requests</p>"), "Retry"),
+        ])
+        for document, expected in documents:
             # Each poll starts a fresh browser process on the widget's dedicated profile.
             context = driver.chromium.launch_persistent_context(Path(root), channel="chromium", headless=True)
             try:
-                context.route("**/*", lambda route: route.fulfill(content_type="text/html", body=body))
+                context.route("**/*", lambda route: route.fulfill(content_type="text/html", **document))
                 with patch.object(weekly, "TIMEOUT_MS", 2000):
                     value = weekly.read_page(context.pages[0])
                 assert value == expected, (value, expected)

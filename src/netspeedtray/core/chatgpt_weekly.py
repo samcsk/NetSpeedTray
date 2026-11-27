@@ -82,7 +82,9 @@ def read_page(page):
     from netspeedtray.utils.helpers import get_app_asset_path
 
     response = page.goto(USAGE, wait_until="domcontentloaded", timeout=TIMEOUT_MS)
-    if response and response.status in (401, 403):
+    if response and (response.status == 403 or response.header_value("cf-mitigated") == "challenge"):
+        return "Blocked"
+    if response and response.status == 401:
         return "Sign in"
     if response and response.status >= 400:
         return "Retry"
@@ -94,8 +96,9 @@ def read_page(page):
     """ + parser + """
         const weekly = readWeeklyPage(document.body);
         if (weekly) return weekly.left + '%';
+        if (/^verify you are human$/im.test(document.body.innerText)) return 'Blocked';
         if (document.querySelector('input[autocomplete=username], a[href*="/auth/login"]') ||
-            /^(log in|sign in|verify you are human)$/im.test(document.body.innerText)) return 'Sign in';
+            /^(log in|sign in)$/im.test(document.body.innerText)) return 'Sign in';
         return false;
     }"""
     try:

@@ -46,8 +46,10 @@ Right-click the widget and open **Settings → Widget → AI quotas**. Devin ref
   means 71% of the weekly allowance remains. You can use your regular browser independently.
   If you used the earlier extension build, remove the extension and sign in once in Settings.
 
-**Sign in** means the browser needs your attention. Open **ChatGPT sign-in** again if ChatGPT
-requires a new login or a verification step. **No data** means the English weekly card could
+**Blocked** means ChatGPT denied the background browser access. This can happen with a valid
+sign-in. Use **ChatGPT sign-in** to view the weekly percentage in the visible Edge window.
+The widget cannot show a current percentage while background access is blocked.
+**Sign in** means ChatGPT needs a login. **No data** means the English weekly card could
 not be read. **Get Edge** means Microsoft Edge is missing. **Set up** indicates missing Devin
 credentials, and **Retry** indicates a failed check.
 The installer and WinGet command below install upstream NetSpeedTray.
