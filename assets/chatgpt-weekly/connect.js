@@ -10,11 +10,21 @@ function connected() {
     chrome.action.setBadgeText({text: ""});
 }
 
+async function showSavedState() {
+    if (await isPaired(saved)) {
+        connected();
+    } else {
+        restore.hidden = true;
+        usage.hidden = true;
+        statusText.textContent = "This profile is no longer connected. Choose the widget folder to use this profile.";
+    }
+}
+
 connectionFolder().then(async connection => {
     if (!connection) return;
     saved = connection;
     if (await saved.folder.queryPermission({mode: "readwrite"}) === "granted") {
-        connected();
+        await showSavedState();
     } else {
         restore.hidden = false;
         statusText.textContent = "Allow the saved folder again. Choose “Allow on every visit” if your browser offers it.";
@@ -24,7 +34,7 @@ connectionFolder().then(async connection => {
 restore.addEventListener("click", async () => {
     try {
         if (await saved.folder.requestPermission({mode: "readwrite"}) === "granted") {
-            connected();
+            await showSavedState();
             return;
         }
     } catch {}

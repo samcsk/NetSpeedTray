@@ -15,8 +15,7 @@ async function sync() {
     }
     const active = await readActive(folder);
     if (!active) return;
-    const owner = await (await folder.getFileHandle("browser.json")).getFile();
-    if (owner.size > 64 || JSON.parse(await owner.text()) !== id) return;
+    if (!await isPaired(connection)) return;
     async function publish(weekly) {
         const handle = await folder.getFileHandle("weekly-" + id + ".json", {create: true});
         const stream = await handle.createWritable();
@@ -55,7 +54,8 @@ chrome.runtime.onMessage.addListener((message, sender) => {
 });
 async function openUsage() {
     const connection = await connectionFolder();
-    if (!connection || await connection.folder.queryPermission({mode: "readwrite"}) !== "granted") {
+    if (!connection || await connection.folder.queryPermission({mode: "readwrite"}) !== "granted"
+            || !await isPaired(connection)) {
         await chrome.runtime.openOptionsPage();
         return;
     }

@@ -27,3 +27,12 @@ async function readActive(folder) {
     const age = Date.now() / 1000 - data.time;
     return /^[a-f0-9]{32}$/.test(data.session) && age >= -2 && age < 90 ? data : null;
 }
+
+async function isPaired({folder, id}) {
+    try {
+        const file = await (await folder.getFileHandle("browser.json")).getFile();
+        return file.size <= 64 && JSON.parse(await file.text()) === id;
+    } catch {
+        return false;
+    }
+}
