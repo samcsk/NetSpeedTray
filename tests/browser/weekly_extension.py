@@ -53,6 +53,24 @@ def main():
             (folder / "browser.json").write_text(json.dumps(browser))
             (folder / f"weekly-{browser}.json").write_text(data)
             assert receiver.read() == "71% · 1d 21h"
+
+            # A second profile paired the same widget. Restoring the old handle must not
+            # reclaim ownership until the user explicitly chooses the folder again.
+            await_takeover = """async () => {
+                const {folder} = await connectionFolder();
+                const owner = await folder.getFileHandle('browser.json');
+                const writer = await owner.createWritable();
+                await writer.write(JSON.stringify('b'.repeat(32)));
+                await writer.close();
+            }"""
+            connect.evaluate(await_takeover)
+            connect.reload()
+            connect.wait_for_function("document.querySelector('#status').textContent.includes('no longer connected')")
+            assert connect.locator("#usage").is_hidden()
+            connect.evaluate("window.showDirectoryPicker = () => navigator.storage.getDirectory(); void 0")
+            connect.locator("#connect").click()
+            connect.locator("#usage").wait_for(state="visible")
+            assert connect.evaluate("connectionFolder().then(isPaired)")
         finally:
             context.close()
             receiver.stop()
