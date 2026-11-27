@@ -15,18 +15,38 @@ function readWeeklyCard(visibleText) {
 
 function readWeeklyPage(root) {
     const selector = "article, section, li, [role='group'], [role='region']";
-    const regions = Array.from(root.querySelectorAll(selector)).filter(el => el.checkVisibility());
-    const weeklyHeading = /^\s*Weekly limit\s*$/im;
-    const weekly = regions.filter(el => weeklyHeading.test(el.innerText)).reverse();
-    // An enclosing group may hold the heading and balance in separate children.
-    // Stop expanding before a sibling card could contribute its own balance.
-    const peers = regions.filter(el => !weeklyHeading.test(el.innerText) &&
-        /\d\s*%\s+left\b/i.test(el.innerText) &&
-        (el.querySelector("h1,h2,h3,h4,h5,h6,[role='heading']") ||
-         /\b(?:limit|quota)s?\b/i.test(el.innerText)));
-    for (const region of [...weekly, root]) {
-        if (peers.some(peer => region.contains(peer))) continue;
-        const balance = readWeeklyCard(region.innerText);
+    const peers = new Set();
+    const branches = new Set();
+    for (const region of root.querySelectorAll(selector)) {
+        if (!region.checkVisibility()) continue;
+        const text = region.innerText;
+        if (/^\s*Weekly limit\s*$/im.test(text) || !/\d\s*%\s+left\b/i.test(text)) continue;
+        if (!region.querySelector("h1,h2,h3,h4,h5,h6,[role='heading']") &&
+            !/\b(?:limit|quota)s?\b/i.test(text)) continue;
+        peers.add(region);
+        for (let parent = region.parentElement; parent && root.contains(parent); parent = parent.parentElement) {
+            branches.add(parent);
+        }
+    }
+    if (!peers.size) return readWeeklyCard(root.innerText);
+
+    // Read contiguous fields on either side of peer cards. Each peer ends a block
+    // before its first field, even when its percentage comes before its heading.
+    const blocks = [[]];
+    function visit(node) {
+        if (peers.has(node)) {
+            blocks.push([]);
+        } else if (branches.has(node)) {
+            node.childNodes.forEach(visit);
+        } else if (node.nodeType === Node.TEXT_NODE) {
+            blocks.at(-1).push(node.textContent);
+        } else if (node instanceof HTMLElement && node.checkVisibility()) {
+            blocks.at(-1).push(node.innerText);
+        }
+    }
+    visit(root);
+    for (const fields of blocks) {
+        const balance = readWeeklyCard(fields.join("\n"));
         if (balance) return balance;
     }
     return null;
