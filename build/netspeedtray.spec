@@ -1,5 +1,7 @@
 # NetSpeedTray.spec
 import os
+import subprocess
+import sys
 
 
 def _remove_path_entries_shadowing_windows_icu():
@@ -321,6 +323,10 @@ def _drop_unused_qt_artifacts(items):
     )
     return kept
 
+
+# Both build modes collect the same assets tree. Stage the verified signed helper
+# before Analysis so it reaches the installer, portable zip, and onefile build.
+subprocess.run([sys.executable, os.path.join(SPECPATH, 'fetch_codex.py')], check=True)
 
 a = Analysis(
     ['..\\src\\monitor.py'],

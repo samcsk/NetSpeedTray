@@ -28,6 +28,7 @@ Run this branch on Windows with Python 3.13. Open PowerShell in the extracted so
 ```powershell
 py -3.13 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe build/fetch_codex.py
 .\.venv\Scripts\python.exe src/monitor.py
 ```
 
@@ -514,6 +515,7 @@ python -m venv .venv
 pip install -r dev-requirements.txt
 
 # 4. Run from source
+python build/fetch_codex.py  # fetch the pinned Windows x64 helper for ChatGPT quota readings
 python src/monitor.py
 
 # 5. Run the tests - point pytest at the tests folder, never the repo root

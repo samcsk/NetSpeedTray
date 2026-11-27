@@ -17,3 +17,7 @@ python/    github.com/python/cpython, tag v3.13.17:
            github.com/python/cpython-source-deps, tag xz-5.2.5 (PCbuild/get_externals.bat), COPYING
 
 Refresh these when Qt, Python or OpenSSL moves to a new line (e.g. Qt 6.11, Python 3.14).
+
+codex/     github.com/openai/codex, tag rust-v0.172.0: LICENSE, NOTICE and
+           third_party/wezterm/LICENSE. Ratatui-LICENSE is from the ratatui 0.30.2
+           crate pinned in codex-rs/Cargo.lock and attributed in Codex's NOTICE.

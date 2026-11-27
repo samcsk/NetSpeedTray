@@ -26,7 +26,6 @@ import os
 import re
 import shutil
 import ssl
-import subprocess
 import sys
 from pathlib import Path
 
@@ -41,7 +40,6 @@ RUNTIME_PACKAGES = {
     "contourpy": ("BSD-3-Clause", "https://github.com/contourpy/contourpy"),
     "cycler": ("BSD-3-Clause", "https://github.com/matplotlib/cycler"),
     "fonttools": ("MIT", "https://github.com/fonttools/fonttools"),
-    "greenlet": ("MIT AND PSF-2.0", "https://greenlet.readthedocs.io"),
     "kiwisolver": ("BSD-3-Clause", "https://github.com/nucleic/kiwi"),
     "matplotlib": ("Matplotlib License (PSF-based); bundled fonts: see their section",
                    "https://matplotlib.org"),
@@ -49,7 +47,6 @@ RUNTIME_PACKAGES = {
               "https://numpy.org"),
     "packaging": ("Apache-2.0 OR BSD-2-Clause", "https://github.com/pypa/packaging"),
     "pillow": ("MIT-CMU", "https://python-pillow.github.io"),
-    "playwright": ("Apache-2.0", "https://github.com/microsoft/playwright-python"),
     "psutil": ("BSD-3-Clause", "https://github.com/giampaolo/psutil"),
     "pyparsing": ("MIT", "https://github.com/pyparsing/pyparsing"),
     "pyqt6": ("GPL-3.0-only", "https://www.riverbankcomputing.com/software/pyqt/"),
@@ -177,21 +174,13 @@ def generate(requirements_path: str | None = None) -> str:
         raise SystemExit(f"[third_party_notices] not installed in this environment "
                          f"(pip install -r requirements.txt): {missing}")
 
-    driver = Path(md.distribution("playwright").locate_file("playwright/driver"))
-    package = driver / "package"
-    driver_version = json.loads(_read_text(package / "package.json"))["version"]
-    driver_notices = [package / name for name in ("LICENSE", "NOTICE", "ThirdPartyNotices.txt")]
-    driver_notices.extend(sorted((package / "lib").rglob("*.LICENSE")))
+    codex_version = json.loads(_read_text(Path(ROOT) / "build" / "codex-release.json"))["version"]
+    codex_notices = ("LICENSE", "NOTICE", "Ratatui-LICENSE", "WezTerm-LICENSE")
     components.append((
-        "Playwright JavaScript driver (playwright-core)", driver_version,
-        "Apache-2.0, plus the licences of its bundled dependencies", "https://playwright.dev",
-        [(p.relative_to(package).as_posix(), _read_text(p)) for p in driver_notices], ""))
-    node = driver / ("node.exe" if os.name == "nt" else "node")
-    node_version = subprocess.check_output([str(node), "--version"], text=True).strip().removeprefix("v")
-    components.append((
-        "Node.js (bundled with the Playwright driver)", node_version,
-        "MIT, plus the licences of its bundled dependencies", "https://nodejs.org",
-        [("playwright/driver/LICENSE", _read_text(driver / "LICENSE"))], ""))
+        "OpenAI Codex", codex_version, "Apache-2.0, with third-party notices",
+        f"https://github.com/openai/codex/tree/rust-v{codex_version}",
+        [(name, _vendored(f"codex/{name}")) for name in codex_notices],
+        "The unmodified Windows x64 executable is bundled for ChatGPT account quota reads."))
 
     py_ver = sys.version.split()[0]
     py_mm = ".".join(py_ver.split(".")[:2])
