@@ -70,6 +70,7 @@ for line in sys.stdin:
         send({'method':'account/login/completed','params':{'loginId':'test','success':True}})
         result = {'type':'chatgpt', 'authUrl':'https://auth.openai.com/test', 'loginId':'test'}
     elif method == 'account/rateLimits/read':
+        assert msg['params'] == {'excludeResetCreditDetails': True}
         if not marker.exists():
             send({'id':msg['id'], 'error':{'message':'codex account authentication required'}})
             continue

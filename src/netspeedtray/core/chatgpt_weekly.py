@@ -150,7 +150,8 @@ def fetch_weekly():
         return "Sign in"
     try:
         with account_client(executable, folder, POLL_TIMEOUT) as client:
-            return weekly_readout(client.request("account/rateLimits/read"))
+            limits = client.request("account/rateLimits/read", {"excludeResetCreditDetails": True})
+            return weekly_readout(limits)
     except RpcError as error:
         return str(error)
     finally:
