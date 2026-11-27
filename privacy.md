@@ -13,11 +13,12 @@ The application is designed to be completely self-contained on your computer. It
 - **AI quotas (off by default).** When enabled, NetSpeedTray sends the Devin organization ID and
   dashboard token to `app.devin.ai` over HTTPS to read its quota. The token is stored in settings
   under Windows DPAPI user protection. Both values are redacted from support bundles. For ChatGPT,
-  Edge stores your sign-in in a dedicated browser profile under `%LOCALAPPDATA%\NetSpeedTray\ChatGPTProfile`.
-  While the provider is enabled, Playwright opens this profile in headless Edge about every five
-  minutes, reads the weekly percentage from the rendered usage page and closes Edge. The widget
-  keeps the reading in memory. Your normal browser profile is separate. To erase the dedicated
-  session, close the sign-in window, quit NetSpeedTray and remove the ChatGPTProfile folder.
+  OpenAI's bundled Codex helper manages its own sign-in and stores its account credentials in
+  a file under `%LOCALAPPDATA%\NetSpeedTray\CodexQuota` in your Windows user profile.
+  While enabled, NetSpeedTray asks the helper for account rate limits about every five minutes,
+  displays the remaining seven-day percentage and keeps the reading in memory. To remove the
+  local sign-in, quit NetSpeedTray and delete the CodexQuota folder. If you used the earlier
+  headless Edge build, you may also remove its old ChatGPTProfile folder.
 
 - **Network Monitoring:** The application monitors your network adapters locally to calculate your current upload and download speeds. It measures the *volume* of traffic (bytes per second) - it never inspects the *content* of your traffic. This information is **only displayed to you** on the widget and is **never sent to any server**.
 - **Wi-Fi band and name (optional, Settings → Network):** If you choose to display the connected Wi-Fi name, NetSpeedTray reads it through `WlanConnectionProfileDetails.GetConnectedSsid`. It does not scan nearby networks, request the location-gated `current_connection` data, or ask for Location permission. The name is cached in memory and refreshed on network changes, on a band change, or after 60 seconds. The optional band is inferred from the same adapter's channel number and refreshed every five seconds. An unavailable name is not retried through the location-gated query. The band and SSID are read locally for display, never stored in the history database, and never transmitted.

@@ -97,7 +97,7 @@ class WidgetPage(QWidget):
                                      description=self.tr("Use the token from your organization's Usage & Limits page."),
                                      control=self.quota_token_button))
         layout.addWidget(SettingCard(self.tr("ChatGPT weekly limit"),
-                                     description=self.tr("Check the percentage left on your English usage page every five minutes in the background."),
+                                     description=self.tr("Check the percentage left in your seven-day allowance every five minutes."),
                                      control=self.quota_codex))
         from netspeedtray.core.chatgpt_weekly import sign_in_window
         self._chatgpt_login = sign_in_window()
@@ -106,7 +106,7 @@ class WidgetPage(QWidget):
         self._chatgpt_login.changed.connect(self._sync_chatgpt_login)
         self._sync_chatgpt_login()
         layout.addWidget(SettingCard(self.tr("ChatGPT sign-in"),
-                                     description=self.tr("Sign in to ChatGPT in the separate Edge window. Close it when you see your weekly limit."),
+                                     description=self.tr("Sign in with OpenAI in your browser to connect the bundled Codex helper."),
                                      control=self.chatgpt_sign_in))
 
         # --- Placement and visibility (was "Behavior", 2.2.2 D7): which taskbar, dragging, floating, and
@@ -193,7 +193,7 @@ class WidgetPage(QWidget):
             self._chatgpt_login.open()
         except (OSError, RuntimeError):
             QMessageBox.warning(self, self.tr("ChatGPT sign-in"),
-                                self.tr("Could not open the sign-in window. Check that Microsoft Edge is installed and your local profile folder is writable."))
+                                self.tr("Check that the full NetSpeedTray package is installed and your local app data folder is writable."))
 
     def _sync_chatgpt_login(self):
         active = self._chatgpt_login.active

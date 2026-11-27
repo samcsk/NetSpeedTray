@@ -39,19 +39,15 @@ Right-click the widget and open **Settings → Widget → AI quotas**. Devin ref
   value under **Set token**. Enable **Devin** and save. Windows protects the token for your user
   account. If **Sign in** appears, repeat this step. To remove the token, choose **Change token**,
   leave it empty, confirm and save. This integration uses the Devin dashboard's quota endpoint.
-- **ChatGPT weekly limit.** Click **Sign in…** in the **ChatGPT sign-in** row. Sign in to ChatGPT
-  in the Edge window that opens, then close that window once you see your English **Weekly limit**
-  card. Enable **ChatGPT weekly limit** and save. NetSpeedTray checks the [usage dashboard](https://chatgpt.com/settings/usage)
-  every five minutes in headless Edge and closes the browser after each check. **ChatGPT 71%**
-  means 71% of the weekly allowance remains. You can use your regular browser independently.
-  If you used the earlier extension build, remove the extension and sign in once in Settings.
+- **ChatGPT weekly limit.** Choose **ChatGPT sign-in → Sign in…** and complete OpenAI sign-in
+  in your browser. Enable **ChatGPT weekly limit** and save. NetSpeedTray uses its bundled
+  Codex helper to check the default account's seven-day allowance every five minutes.
+  **ChatGPT 71%** means 71% remains. You can close the browser after sign-in.
+  If you used an earlier extension or headless Edge build, sign in once through the new build.
 
-**Blocked** means ChatGPT denied the background browser access. This can happen with a valid
-sign-in. Use **ChatGPT sign-in** to view the weekly percentage in the visible Edge window.
-The widget cannot show a current percentage while background access is blocked.
-**Sign in** means ChatGPT needs a login. **No data** means the English weekly card could
-not be read. **Get Edge** means Microsoft Edge is missing. **Set up** indicates missing Devin
-credentials, and **Retry** indicates a failed check.
+**Sign in** means OpenAI needs a login. **No data** means the account did not return a
+usable seven-day limit for the default Codex allowance. **Reinstall** means the packaged helper
+is missing. **Set up** indicates missing Devin credentials, and **Retry** indicates a failed check.
 The installer and WinGet command below install upstream NetSpeedTray.
 
 ```powershell
