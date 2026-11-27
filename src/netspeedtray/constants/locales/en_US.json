@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "Download",
     "LANGUAGE_LABEL": "Language",
     "UPDATE_INTERVAL_LABEL": "Update interval",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "Quota refresh interval",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "How often to check enabled quota providers.",
     "UPDATE_INTERVAL_DESCRIPTION": "1s is recommended. 0.5s refreshes faster but uses more CPU; history is still saved once per second.",
     "START_WITH_WINDOWS_LABEL": "Start with Windows",
     "FREE_MOVE_LABEL": "Free move (no snapping)",

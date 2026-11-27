@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "Downloaden",
     "LANGUAGE_LABEL": "Taal",
     "UPDATE_INTERVAL_LABEL": "Update-interval",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "Verversingsinterval voor quota",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "Hoe vaak de quota van ingeschakelde aanbieders worden opgehaald.",
     "UPDATE_INTERVAL_DESCRIPTION": "1s wordt aanbevolen. 0,5s ververst sneller maar gebruikt meer CPU; de geschiedenis wordt nog steeds één keer per seconde opgeslagen.",
     "START_WITH_WINDOWS_LABEL": "Starten met Windows",
     "FREE_MOVE_LABEL": "Vrij bewegen (geen uitlijning)",

@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "Herunterladen",
     "LANGUAGE_LABEL": "Sprache",
     "UPDATE_INTERVAL_LABEL": "Aktualisierungsintervall",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "Aktualisierungsintervall für Kontingente",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "Wie oft die Kontingente der aktivierten Anbieter abgefragt werden.",
     "UPDATE_INTERVAL_DESCRIPTION": "1s wird empfohlen. 0,5s aktualisiert schneller, braucht aber mehr CPU; der Verlauf wird weiterhin einmal pro Sekunde gespeichert.",
     "START_WITH_WINDOWS_LABEL": "Mit Windows starten",
     "FREE_MOVE_LABEL": "Frei beweglich (kein Einrasten)",

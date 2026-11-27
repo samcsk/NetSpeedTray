@@ -84,11 +84,11 @@ class WidgetPage(QWidget):
         self.quota_refresh = QSpinBox()
         self.quota_refresh.setRange(defaults.MIN_QUOTA_REFRESH_SECONDS, defaults.MAX_QUOTA_REFRESH_SECONDS)
         self.quota_refresh.setValue(defaults.DEFAULT_QUOTA_REFRESH_SECONDS)
-        self.quota_refresh.setSuffix(self.tr(" s"))
+        self.quota_refresh.setSuffix(" " + self.i18n.DURATION_SECONDS_SHORT)
         self.quota_refresh.setKeyboardTracking(False)
         self.quota_refresh.valueChanged.connect(self.on_change)
-        layout.addWidget(SettingCard(self.tr("Quota refresh interval"),
-                                     description=self.tr("How often to check enabled quota providers."),
+        layout.addWidget(SettingCard(self.i18n.QUOTA_REFRESH_INTERVAL_LABEL,
+                                     description=self.i18n.QUOTA_REFRESH_INTERVAL_DESCRIPTION,
                                      control=self.quota_refresh))
         self.quota_devin = Win11Toggle(label_text="")
         self.quota_codex = Win11Toggle(label_text="")

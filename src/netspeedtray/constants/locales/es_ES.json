@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "Descarga",
     "LANGUAGE_LABEL": "Idioma",
     "UPDATE_INTERVAL_LABEL": "Intervalo de actualización",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "Intervalo de actualización de las cuotas",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "Frecuencia con la que se consultan las cuotas de los proveedores activados.",
     "UPDATE_INTERVAL_DESCRIPTION": "Se recomienda 1s. 0,5s actualiza más rápido pero usa más CPU; el historial se sigue guardando una vez por segundo.",
     "START_WITH_WINDOWS_LABEL": "Iniciar con Windows",
     "FREE_MOVE_LABEL": "Movimiento libre (sin ajuste)",

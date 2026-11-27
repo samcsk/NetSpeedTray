@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "Загрузка",
     "LANGUAGE_LABEL": "Язык",
     "UPDATE_INTERVAL_LABEL": "Интервал обновления",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "Интервал обновления квот",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "Как часто проверяются квоты включённых сервисов.",
     "UPDATE_INTERVAL_DESCRIPTION": "Рекомендуется 1с. 0,5с обновляет быстрее, но сильнее нагружает ЦП; история по-прежнему сохраняется раз в секунду.",
     "START_WITH_WINDOWS_LABEL": "Запускать с Windows",
     "FREE_MOVE_LABEL": "Свободное перемещение (без прилипания)",

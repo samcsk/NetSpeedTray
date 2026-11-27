@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "İndir",
     "LANGUAGE_LABEL": "Dil",
     "UPDATE_INTERVAL_LABEL": "Güncelleme aralığı",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "Kota yenileme aralığı",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "Etkin sağlayıcıların kotalarının ne sıklıkta denetleneceği.",
     "UPDATE_INTERVAL_DESCRIPTION": "1s önerilir. 0,5s daha hızlı yeniler ancak daha fazla CPU kullanır; geçmiş yine saniyede bir kaydedilir.",
     "START_WITH_WINDOWS_LABEL": "Windows ile birlikte başlat",
     "FREE_MOVE_LABEL": "Serbest taşıma (hizalama yok)",

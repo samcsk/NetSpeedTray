@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "Letöltés",
     "LANGUAGE_LABEL": "Nyelv",
     "UPDATE_INTERVAL_LABEL": "Frissítési időköz",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "Kvóták frissítési időköze",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "Az engedélyezett szolgáltatók kvótáinak ellenőrzési gyakorisága.",
     "UPDATE_INTERVAL_DESCRIPTION": "Az 1 másodperces frissítés ajánlott. A 0,5 másodperces frissítés gyorsabb, de nagyobb CPU-terheléssel jár. Az előzmények továbbra is másodpercenként egyszer kerülnek mentésre.",
     "START_WITH_WINDOWS_LABEL": "Indítás a Windowszal",
     "FREE_MOVE_LABEL": "Szabad mozgatás (illesztés nélkül)",

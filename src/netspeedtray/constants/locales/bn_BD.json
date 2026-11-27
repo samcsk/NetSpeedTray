@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "ডাউনলোড",
     "LANGUAGE_LABEL": "ভাষা",
     "UPDATE_INTERVAL_LABEL": "আপডেট বিরতি",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "কোটা হালনাগাদের বিরতি",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "চালু থাকা সেবাগুলোর কোটা কতক্ষণ পরপর পরীক্ষা করা হবে।",
     "UPDATE_INTERVAL_DESCRIPTION": "১ সেকেন্ড ব্যবধান সুপারিশ করা হয়। ০.৫ সেকেন্ডে আরও দ্রুত রিফ্রেশ হয়, কিন্তু সিপিইউ-এর ব্যবহার বাড়ে; ইতিহাসের ডেটা তবুও প্রতি সেকেন্ডে একবার সংরক্ষিত হয়।",
     "START_WITH_WINDOWS_LABEL": "উইন্ডোজের সাথে চালু করুন",
     "FREE_MOVE_LABEL": "মুক্তভাবে সরান (স্ন্যাপিং ছাড়া)",

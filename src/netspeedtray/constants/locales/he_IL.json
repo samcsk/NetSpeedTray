@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "הורדה",
     "LANGUAGE_LABEL": "שפה",
     "UPDATE_INTERVAL_LABEL": "מרווח עדכון",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "מרווח רענון המכסות",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "תדירות בדיקת המכסות של הספקים הפעילים.",
     "UPDATE_INTERVAL_DESCRIPTION": "מומלץ 1s. בקצב 0.5s התצוגה מתעדכנת מהר יותר אך צורכת יותר CPU; ההיסטוריה עדיין נשמרת פעם בשנייה.",
     "START_WITH_WINDOWS_LABEL": "התחל עם Windows",
     "FREE_MOVE_LABEL": "תנועה חופשית (ללא הצמדה)",

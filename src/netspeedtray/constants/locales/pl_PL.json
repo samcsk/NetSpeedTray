@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "Pobieranie",
     "LANGUAGE_LABEL": "Język",
     "UPDATE_INTERVAL_LABEL": "Interwał aktualizacji",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "Interwał odświeżania limitów",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "Jak często sprawdzane są limity włączonych dostawców.",
     "UPDATE_INTERVAL_DESCRIPTION": "Zalecane jest 1s. 0,5s odświeża szybciej, ale bardziej obciąża CPU; historia nadal jest zapisywana raz na sekundę.",
     "START_WITH_WINDOWS_LABEL": "Uruchamiaj z systemem Windows",
     "FREE_MOVE_LABEL": "Swobodne przesuwanie (bez przyciągania)",
