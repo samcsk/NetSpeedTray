@@ -90,13 +90,14 @@ def read_page(page):
         return "Retry"
     parser = get_app_asset_path("chatgpt-weekly.js").read_text(encoding="utf-8")
     predicate = """() => {
-        if (location.origin !== 'https://chatgpt.com' ||
-            location.pathname.replace(/\\/$/, '') !== '/settings/usage') return 'Sign in';
         if (!document.body) return false;
-    """ + parser + """
-        const weekly = readWeeklyPage(document.body);
-        if (weekly) return weekly.left + '%';
         if (/^verify you are human$/im.test(document.body.innerText)) return 'Blocked';
+    """ + parser + """
+        if (location.origin === 'https://chatgpt.com' &&
+            location.pathname.replace(/\\/$/, '') === '/settings/usage') {
+            const weekly = readWeeklyPage(document.body);
+            if (weekly) return weekly.left + '%';
+        }
         if (document.querySelector('input[autocomplete=username], a[href*="/auth/login"]') ||
             /^(log in|sign in)$/im.test(document.body.innerText)) return 'Sign in';
         return false;

@@ -18,6 +18,8 @@ CASES = [
             "<span>Resets </span><span>tomorrow</span><p><span>0</span><span>% left</span></p></div>", "0%"),
     ("<button>Log in</button>", "Sign in"),
     ("<p>Verify you are human</p>", "Blocked"),
+    ("<script>history.replaceState(null, '', '/verification')</script><p>Verify you are human</p>", "Blocked"),
+    ("<script>history.replaceState(null, '', '/auth/login')</script><button>Log in</button>", "Sign in"),
     ("<h2>Weekly limit</h2><script>setTimeout(() => document.body.append('88% left'), 150)</script>", "88%"),
 ]
 
