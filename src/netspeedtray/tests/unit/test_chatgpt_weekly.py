@@ -8,6 +8,9 @@ from netspeedtray.core import chatgpt_weekly as weekly, quotas
 def test_first_poll_requests_sign_in_without_creating_profile(tmp_path, monkeypatch):
     folder = tmp_path / "new-profile"
     monkeypatch.setattr(weekly, "profile_dir", lambda: folder)
+    monkeypatch.setattr(weekly, "edge_executable", lambda: None)
+    assert weekly.fetch_weekly() == "Get Edge"
+    monkeypatch.setattr(weekly, "edge_executable", lambda: tmp_path / "msedge.exe")
     assert weekly.fetch_weekly() == "Sign in"
     assert not folder.exists()
 

@@ -105,12 +105,12 @@ def read_page(page):
 
 
 def fetch_weekly():
-    folder = profile_dir()
-    if not folder.is_dir():
-        return "Sign in"
     edge = edge_executable()
     if not edge:
         return "Get Edge"
+    folder = profile_dir()
+    if not folder.is_dir():
+        return "Sign in"
     from playwright.sync_api import sync_playwright
 
     if not _profile_lock.acquire(blocking=False):
