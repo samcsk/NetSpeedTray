@@ -63,9 +63,10 @@ def draw_quotas(painter, panel, names, values, vertical, color, fm):
                 half = height // 2
                 while fm.horizontalAdvance(value) > width and "%" in value and " " in value:
                     value = value.rsplit(" ", 1)[0]
+                if fm.horizontalAdvance(value) > width:
+                    value = fm.elidedText(value, Qt.TextElideMode.ElideRight, width)
                 painter.drawText(QRect(x, y, width, half), Qt.AlignmentFlag.AlignCenter, name)
-                painter.drawText(QRect(x, y + half, width, height - half), Qt.AlignmentFlag.AlignCenter,
-                                 fm.elidedText(value, Qt.TextElideMode.ElideRight, width))
+                painter.drawText(QRect(x, y + half, width, height - half), Qt.AlignmentFlag.AlignCenter, value)
             else:
                 text = f"{name}  {value}"
                 text_x = x + (width - fm.horizontalAdvance(text)) // 2

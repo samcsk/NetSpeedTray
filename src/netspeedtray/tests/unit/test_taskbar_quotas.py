@@ -4,7 +4,7 @@ import threading
 from unittest.mock import MagicMock
 
 import pytest
-from PyQt6.QtCore import QRect
+from PyQt6.QtCore import QRect, Qt
 from PyQt6.QtGui import QColor, QFont, QFontDatabase, QFontMetrics, QImage, QPainter
 
 from netspeedtray.core import chatgpt_weekly, quotas
@@ -253,23 +253,26 @@ def test_full_chatgpt_countdown_ink_at_layout_switch(qapp, height_delta):
     assert actual.copy(area) == reference.copy(area)
 
 
-def test_vertical_chatgpt_countdown_keeps_units_that_fit(qapp):
+@pytest.mark.parametrize("expected", ["28% 23h", "28%"])
+def test_vertical_chatgpt_countdown_keeps_units_that_fit(qapp, expected):
     font = QFont("Arial", 9)
     fm = QFontMetrics(font)
-
-    def frame(width, value):
-        panel = QRect(0, 0, width, quota_height(fm.height(), ("ChatGPT",)))
-        image = QImage(panel.size(), QImage.Format.Format_ARGB32)
-        image.fill(QColor("black"))
-        painter = QPainter(image)
-        painter.setFont(font)
-        draw_quotas(painter, panel, ("ChatGPT",), {"codex": value}, True, "white", fm)
-        painter.end()
-        return image
-
-    countdown = "28% 23h 59m"
-    width = fm.horizontalAdvance("28% 23h")
-    assert frame(width, countdown) == frame(width, "28% 23h")
-    assert frame(width, countdown) != frame(width, "28%")
-    width = fm.horizontalAdvance("28%")
-    assert frame(width, countdown) == frame(width, "28%")
+    width = fm.horizontalAdvance(expected)
+    height = quota_height(fm.height(), ("ChatGPT",))
+    margin = 20
+    # Leave room either side so the reference draws the entire expected text.
+    panel = QRect(margin, 0, width, height)
+    actual = QImage(width + 2 * margin, height, QImage.Format.Format_ARGB32)
+    actual.fill(QColor("black"))
+    reference = actual.copy()
+    painter = QPainter(actual)
+    painter.setFont(font)
+    draw_quotas(painter, panel, ("ChatGPT",), {"codex": "28% 23h 59m"}, True, "white", fm)
+    painter.end()
+    value_row = actual.rect().adjusted(0, height // 2, 0, 0)
+    painter = QPainter(reference)
+    painter.setPen(QColor("white"))
+    painter.setFont(font)
+    painter.drawText(value_row, Qt.AlignmentFlag.AlignCenter, expected)
+    painter.end()
+    assert actual.copy(value_row) == reference.copy(value_row)
