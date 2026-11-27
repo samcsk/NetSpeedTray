@@ -109,6 +109,16 @@ def test_failed_poll_replaces_old_reading(qtbot, monkeypatch):
     poller.configure({})
 
 
+def test_adding_a_provider_keeps_the_scheduled_refresh(qtbot, monkeypatch):
+    poller = quotas.QuotaPoller()
+    monkeypatch.setattr(poller, "_start", lambda _name: None)
+    poller.configure({"quota_devin": True})
+    timer_id = poller._timer.timerId()
+    poller.configure({"quota_devin": True, "quota_codex": True})
+    assert poller._timer.timerId() == timer_id
+    poller.configure({})
+
+
 def test_slow_provider_cannot_overwrite_new_settings(qtbot, monkeypatch):
     started = threading.Event()
     finish = threading.Event()

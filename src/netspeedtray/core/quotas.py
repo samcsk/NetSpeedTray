@@ -178,10 +178,10 @@ class QuotaPoller(QObject):
         for name in enabled - self._active.keys():
             self._active[name] = self._generation
             self._start(name)
-        if enabled:
-            self._timer.start()
-        else:
+        if not enabled:
             self._timer.stop()
+        elif not self._timer.isActive():
+            self._timer.start()
         self.changed.emit()
 
     def _poll(self):
