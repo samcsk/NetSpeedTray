@@ -28,6 +28,30 @@ def test_weekly_window(payload, expected):
     assert weekly.weekly_readout(payload) == expected
 
 
+NOW = 1_800_000_000
+
+
+@pytest.mark.parametrize(("reset", "expected"), [
+    (NOW + 7 * 86400, "28% 7d"),
+    (NOW + 6 * 86400 + 21 * 3600 + 59 * 60, "28% 6d 21h"),
+    (NOW + 86400, "28% 1d"),
+    (NOW + 86400 - 1, "28% 23h 59m"),
+    (NOW + 3600, "28% 1h"),
+    (NOW + 60, "28% 1m"),
+    (NOW + 59, "28% <1m"),
+    (NOW, "28%"),
+    (NOW - 1, "28%"),
+    (None, "28%"),
+    ("invalid", "28%"),
+    (True, "28%"),
+])
+def test_reset_comes_from_weekly_window(reset, expected, monkeypatch):
+    monkeypatch.setattr(weekly, "time", lambda: NOW)
+    bucket = {"limitId": "codex", "primary": dict(SHORT, resetsAt=NOW + 60),
+              "secondary": dict(WEEK, usedPercent=72, resetsAt=reset)}
+    assert str(weekly.weekly_readout({"rateLimits": bucket})) == expected
+
+
 @pytest.mark.parametrize("used", [-1, float("inf"), float("nan"), True, None, "12"])
 def test_invalid_percentage(used):
     window = dict(WEEK, usedPercent=used)
@@ -75,7 +99,7 @@ for line in sys.stdin:
             send({'id':msg['id'], 'error':{'message':'codex account authentication required'}})
             continue
         result = {'rateLimitsByLimitId':{'codex':{'primary':{
-            'usedPercent':int(marker.read_text()),'windowDurationMins':10080}}}}
+            'usedPercent':int(marker.read_text()),'windowDurationMins':10080,'resetsAt':WEEKLY_RESET}}}}
     else:
         raise ValueError('unexpected operation')
     send({'id':msg['id'],'result':result})
@@ -83,8 +107,11 @@ for line in sys.stdin:
 
 
 def test_sign_in_poll_and_restart(qtbot, tmp_path, monkeypatch):
+    now = NOW
+    monkeypatch.setattr(weekly, "time", lambda: now)
     executable = tmp_path / "server.py"
-    executable.write_text(FAKE_SERVER, encoding="utf-8")
+    reset = NOW + (6 * 24 + 21) * 3600
+    executable.write_text(FAKE_SERVER.replace("WEEKLY_RESET", str(reset)), encoding="utf-8")
     folder = tmp_path / "dedicated"
     folder.mkdir()
     monkeypatch.setenv("OPENAI_API_KEY", "fixture")
@@ -116,16 +143,20 @@ def test_sign_in_poll_and_restart(qtbot, tmp_path, monkeypatch):
         qtbot.waitUntil(opened.is_set)
         assert weekly.fetch_weekly() == "Sign in"
         finish.set()
-        qtbot.waitUntil(lambda: poller.values == {"codex": "20%"})
+        qtbot.waitUntil(lambda: poller.values == {"codex": "20% 6d 21h"})
         assert not login.failed and frozen == {"devin": "62% 7d"}
+        now += 3600  # The stored reset counts down before another poll.
+        assert poller.values == {"codex": "20% 6d 20h"}
         (folder / "used").write_text("81")
         poller._timer.timeout.emit()
-        qtbot.waitUntil(lambda: poller.values == {"codex": "19%"})
+        qtbot.waitUntil(lambda: poller.values == {"codex": "19% 6d 20h"})
         poller.configure({})
         restarted = quotas.QuotaPoller()
         restarted.configure({"quota_codex": True})
         try:
-            qtbot.waitUntil(lambda: restarted.values == {"codex": "19%"})
+            qtbot.waitUntil(lambda: restarted.values == {"codex": "19% 6d 20h"})
+            now += 7 * 86400
+            assert restarted.values == {"codex": "19%"}
         finally:
             restarted.configure({})
     finally:

@@ -102,7 +102,7 @@ def test_stacked_quota_digits_align_with_hardware_rows(q_app, height):
 
     def frame(digits):
         metrics = WidgetMetrics(cpu_usage=digits, gpu_usage=digits,
-                                quotas={"devin": f"{digits}% 2d", "codex": f"{digits}%"})
+                                quotas={"devin": f"{digits}% 2d", "codex": f"{digits}% 6d 21h"})
         img = QImage(rect.size(), QImage.Format.Format_ARGB32)
         img.fill(QColor("black"))
         painter = QPainter(img)

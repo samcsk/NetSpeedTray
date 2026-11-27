@@ -1,11 +1,13 @@
 """Read the default Codex seven-day allowance via the bundled OpenAI app-server."""
 from contextlib import contextmanager
+from dataclasses import dataclass
 import json
 import math
 import os
 from pathlib import Path
 import subprocess
 import threading
+from time import time
 from urllib.parse import urlsplit
 
 from PyQt6.QtCore import QCoreApplication, QObject, pyqtSignal
@@ -25,7 +27,27 @@ def profile_dir():
     return Path(local) / "NetSpeedTray" / "CodexQuota"
 
 
-def weekly_readout(payload):
+@dataclass(frozen=True)
+class WeeklyReading:
+    percentage: str
+    resets_at: int  # Unix seconds from the selected Codex window.
+
+    def __str__(self):
+        seconds = self.resets_at - int(time())
+        if seconds <= 0:
+            return self.percentage
+        hours, minutes = divmod(seconds // 60, 60)
+        days, hours = divmod(hours, 24)
+        if days:
+            countdown = f"{days}d" + (f" {hours}h" if hours else "")
+        elif hours:
+            countdown = f"{hours}h" + (f" {minutes}m" if minutes else "")
+        else:
+            countdown = f"{minutes}m" if minutes else "<1m"
+        return f"{self.percentage} {countdown}"
+
+
+def weekly_readout(payload) -> WeeklyReading | str:
     buckets = payload.get("rateLimitsByLimitId")
     if buckets is None:
         bucket = payload.get("rateLimits")
@@ -39,10 +61,13 @@ def weekly_readout(payload):
                if isinstance(window, dict) and window.get("windowDurationMins") == 7 * 24 * 60]
     if len(windows) != 1:
         return "No data"
-    used = windows[0].get("usedPercent")
+    window = windows[0]
+    used = window.get("usedPercent")
     if type(used) not in (int, float) or not 0 <= used < math.inf:
         return "No data"
-    return f"{max(0, 100 - used):g}%"
+    percentage = f"{max(0, 100 - used):g}%"
+    reset = window.get("resetsAt")
+    return WeeklyReading(percentage, reset) if type(reset) is int else percentage
 
 
 class RpcError(Exception):

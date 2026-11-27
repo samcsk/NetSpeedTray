@@ -45,7 +45,9 @@ Devin shows the window closest to exhaustion. **Devin 30% 2d** means 30% remains
 - **ChatGPT weekly limit.** Choose **ChatGPT sign-in → Sign in…** and complete OpenAI sign-in
   in your browser. Enable **ChatGPT weekly limit** and save. NetSpeedTray uses its bundled
   Codex helper to check the default account's seven-day allowance at the selected interval.
-  **ChatGPT 71%** means 71% remains. You can close the browser after sign-in.
+  **ChatGPT 28% 6d 21h** means 28% remains and the allowance resets in 6 days and 21 hours.
+  If OpenAI omits the reset time or it has passed, the widget shows just the percentage.
+  You can close the browser after sign-in.
   If you used an earlier extension or headless Edge build, sign in once through the new build.
 
 **Sign in** means OpenAI needs a login. **No data** means the account did not return a

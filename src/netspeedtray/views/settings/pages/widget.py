@@ -107,7 +107,7 @@ class WidgetPage(QWidget):
                                      description=self.tr("Use the token from your organization's Usage & Limits page."),
                                      control=self.quota_token_button))
         layout.addWidget(SettingCard(self.tr("ChatGPT weekly limit"),
-                                     description=self.tr("Show the percentage left in your seven-day allowance."),
+                                     description=self.tr("Show the percentage left in your seven-day allowance and the time until reset."),
                                      control=self.quota_codex))
         from netspeedtray.core.chatgpt_weekly import sign_in_window
         self._chatgpt_login = sign_in_window()

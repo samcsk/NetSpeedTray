@@ -13,12 +13,14 @@ def quota_names(config):
 def quota_width(fm, names, height):
     if not names:
         return 0
-    label = max(fm.horizontalAdvance(name) for name in names)
+    label = max(names, key=fm.horizontalAdvance)
     statuses = ("100% 7d", "100% 24h", "100% 60m", "100% <1m",
                 "Reinstall", "Sign in", "No quota", "No data", "Set up", "Retry")
-    value = max(fm.horizontalAdvance(text) for text in statuses)
+    if "ChatGPT" in names:
+        statuses += ("100% 6d 23h", "100% 23h 59m")
+    value = max(statuses, key=fm.horizontalAdvance)
     columns = 1 if height >= len(names) * fm.height() else len(names)
-    return columns * (8 + label + fm.horizontalAdvance("  ") + value)
+    return columns * (8 + fm.horizontalAdvance(f"{label}  {value}"))
 
 
 def quota_height(line_height, names):
@@ -54,8 +56,8 @@ def draw_quotas(painter, panel, names, values, vertical, color, fm):
             if vertical:
                 y = panel.y() + i * height
                 half = height // 2
-                if fm.horizontalAdvance(value) > width and "%" in value:
-                    value = value.split()[0]
+                while fm.horizontalAdvance(value) > width and "%" in value and " " in value:
+                    value = value.rsplit(" ", 1)[0]
                 painter.drawText(QRect(x, y, width, half), Qt.AlignmentFlag.AlignCenter, name)
                 painter.drawText(QRect(x, y + half, width, height - half), Qt.AlignmentFlag.AlignCenter,
                                  fm.elidedText(value, Qt.TextElideMode.ElideRight, width))

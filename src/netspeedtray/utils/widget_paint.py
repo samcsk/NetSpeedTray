@@ -103,7 +103,7 @@ def demo_metrics() -> WidgetMetrics:
         cpu_temp=58.0, gpu_temp=64.0,
         cpu_power=35.0, gpu_power=120.0,
         ram_used=9.2, ram_total=16.0,
-        quotas={"devin": "30% 2d", "codex": "71%"},
+        quotas={"devin": "30% 2d", "codex": "28% 6d 21h"},
         vram_used=3.1, vram_total=8.0,
     )
 
