@@ -13,6 +13,11 @@ def config_manager(tmp_path):
     config_path = tmp_path / "netspeedtray_test.conf"
     return ConfigManager(config_path)
 
+@pytest.mark.parametrize("invalid", ["30", 0, -1, 3601])
+def test_invalid_quota_interval_uses_default(config_manager, invalid):
+    normalized = config_manager._validate_config({"quota_refresh_seconds": invalid})
+    assert normalized["quota_refresh_seconds"] == 30
+
 def test_load_creates_default_config_if_missing(config_manager):
     with patch.object(Path, "exists", return_value=False):
         with patch.object(config_manager, "save") as mock_save:

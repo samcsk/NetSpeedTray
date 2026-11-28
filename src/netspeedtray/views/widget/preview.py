@@ -13,6 +13,7 @@ Consumers:
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from typing import Any, Dict, Optional
 
 from PyQt6.QtCore import Qt, QRect
@@ -130,13 +131,16 @@ class PreviewWidget(QWidget):
             probe = QImage(w, h, QImage.Format.Format_ARGB32_Premultiplied)
             painter = QPainter(probe)
             try:
-                render_widget(painter, QRect(0, 0, w, h), self._renderer, self._renderer.config, self._metrics,
+                cfg = self._renderer.config
+                render_widget(painter, QRect(0, 0, w, h), self._renderer, replace(cfg, quota_names=()), self._metrics,
                               layout_mode=self._layout_mode, cycle_mode=self._cycle_mode,
                               network_width=None, font=self._font)
             finally:
                 painter.end()   # never leave the probe being painted - Qt aborts when it's freed mid-paint
             content = self._renderer.get_content_bounds().width()
             needed = content + constants.renderer.TEXT_MARGIN + constants.renderer.RIGHT_ANCHOR_PADDING
+            from netspeedtray.utils.quota_paint import quota_width
+            needed += quota_width(self._renderer.metrics, cfg.quota_names, h)
             self.setFixedWidth(max(self._min_width, needed))
             self._fitted_for = fit_for
         except Exception as e:

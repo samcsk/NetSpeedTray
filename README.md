@@ -21,6 +21,40 @@ Free and open source, signed, no ads, no telemetry. The feature Windows forgot.
 
 ## Install
 
+### Taskbar quotas in this fork
+
+Run this branch on Windows with Python 3.13. Open PowerShell in the extracted source folder and run:
+
+```powershell
+py -3.13 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe build/fetch_codex.py
+.\.venv\Scripts\python.exe src/monitor.py
+```
+
+Right-click the widget and open **Settings → Widget → AI quotas**. Both providers refresh every 30 seconds by default when enabled. To change this, set **Quota refresh interval** to a value from 30 to 3600 seconds and click **Save**.
+
+Devin shows the window closest to exhaustion. **Devin 30% 2d** means 30% remains and that allowance resets in about two days. Shorter countdowns use hours or minutes. If the reset time is missing or has passed, the widget shows just the percentage.
+
+- **Devin.** Open your organization's **Usage & Limits** page in your signed-in browser. In Developer
+  Tools → Network, reload the page and select the successful `billing/quota/usage` request.
+  Enter its `x-cog-org-id` request header in **Devin organization ID** and paste its `Authorization`
+  value under **Set token**. Enable **Devin** and save. Windows protects the token for your user
+  account. If **Sign in** appears, repeat this step. To remove the token, choose **Change token**,
+  leave it empty, confirm and save. This integration uses the Devin dashboard's quota endpoint.
+- **ChatGPT weekly limit.** Choose **ChatGPT sign-in → Sign in…** and complete OpenAI sign-in
+  in your browser. Enable **ChatGPT weekly limit** and save. NetSpeedTray uses its bundled
+  Codex helper to check the default account's seven-day allowance at the selected interval.
+  **ChatGPT 28% 6d 21h** means 28% remains and the allowance resets in 6 days and 21 hours.
+  If OpenAI omits the reset time or it has passed, the widget shows just the percentage.
+  You can close the browser after sign-in.
+  If you used an earlier extension or headless Edge build, sign in once through the new build.
+
+**Sign in** means OpenAI needs a login. **No data** means the account did not return a
+usable seven-day limit for the default Codex allowance. **Reinstall** means the packaged helper
+is missing. **Set up** indicates missing Devin credentials, and **Retry** indicates a failed check.
+The installer and WinGet command below install upstream NetSpeedTray.
+
 ```powershell
 winget install --id erez-c137.NetSpeedTray
 ```
@@ -481,6 +515,7 @@ python -m venv .venv
 pip install -r dev-requirements.txt
 
 # 4. Run from source
+python build/fetch_codex.py  # fetch the pinned Windows x64 helper for ChatGPT quota readings
 python src/monitor.py
 
 # 5. Run the tests - point pytest at the tests folder, never the repo root

@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "Réception",
     "LANGUAGE_LABEL": "Langue",
     "UPDATE_INTERVAL_LABEL": "Intervalle de mise à jour",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "Intervalle de mise à jour des quotas",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "Fréquence de vérification des quotas des fournisseurs activés.",
     "UPDATE_INTERVAL_DESCRIPTION": "1s est recommandé. 0,5s actualise plus vite mais sollicite davantage le CPU ; l'historique reste enregistré une fois par seconde.",
     "START_WITH_WINDOWS_LABEL": "Lancer avec Windows",
     "FREE_MOVE_LABEL": "Déplacement libre (sans aimantation)",

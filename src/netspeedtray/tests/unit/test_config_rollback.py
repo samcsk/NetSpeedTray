@@ -92,3 +92,18 @@ def test_a_rollback_whose_reapply_also_fails_does_not_loop_or_mask_the_error(set
     assert w.widget_state.apply_config.call_count == 2
     assert w.config["font_size"] == OLD_FONT
     assert cc._rolling_back is False
+
+
+def test_unsaved_quota_edits_cannot_be_persisted_by_an_unrelated_save(setup):
+    cc, widget, _ = setup
+    edits = dict(quota_devin=True, quota_codex=True, quota_devin_org="org-new",
+                 quota_devin_token_protected="protected")
+    saved = {key: widget.config[key] for key in edits}
+    cc.handle_settings_changed(edits, save_to_disk=False)
+    cc.update_config({"font_size": OLD_FONT})
+    snapshot = cc.config_manager.save.call_args.args[0]
+    assert {key: snapshot[key] for key in edits} == saved
+    widget.apply_quotas.assert_not_called()
+    cc.handle_settings_changed(edits, save_to_disk=True)
+    assert {key: widget.config[key] for key in edits} == edits
+    widget.apply_quotas.assert_called_once()

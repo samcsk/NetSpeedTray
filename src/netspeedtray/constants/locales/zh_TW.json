@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "下載",
     "LANGUAGE_LABEL": "語言",
     "UPDATE_INTERVAL_LABEL": "更新間隔",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "配額更新間隔",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "檢查已啟用服務的配額的頻率。",
     "UPDATE_INTERVAL_DESCRIPTION": "建議使用 1 秒。0.5 秒更新較快，但會使用更多 CPU；歷史紀錄仍每秒儲存一次。",
     "START_WITH_WINDOWS_LABEL": "隨 Windows 啟動",
     "FREE_MOVE_LABEL": "自由移動 (不吸附)",

@@ -14,7 +14,7 @@ from typing import Dict, Any, Callable, List, Optional
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QGuiApplication
-from PyQt6.QtWidgets import QWidget, QComboBox, QLabel
+from PyQt6.QtWidgets import QWidget, QComboBox, QLabel, QLineEdit, QPushButton, QInputDialog, QMessageBox, QSpinBox
 
 from netspeedtray import constants
 from netspeedtray.utils import styles as su
@@ -78,6 +78,46 @@ class WidgetPage(QWidget):
             combo.currentIndexChanged.connect(lambda _, idx=i: self._on_pos_changed(idx))
             layout.addWidget(SettingCard(getattr(self.i18n, f"ORDER_POSITION_{i+1}"), control=combo))
             self.pos_combos.append(combo)
+
+        layout.addWidget(section_header(self.tr("AI quotas")))
+        defaults = constants.config.defaults
+        self.quota_refresh = QSpinBox()
+        self.quota_refresh.setRange(defaults.MIN_QUOTA_REFRESH_SECONDS, defaults.MAX_QUOTA_REFRESH_SECONDS)
+        self.quota_refresh.setValue(defaults.DEFAULT_QUOTA_REFRESH_SECONDS)
+        self.quota_refresh.setSuffix(" " + self.i18n.DURATION_SECONDS_SHORT)
+        self.quota_refresh.setKeyboardTracking(False)
+        self.quota_refresh.valueChanged.connect(self.on_change)
+        layout.addWidget(SettingCard(self.i18n.QUOTA_REFRESH_INTERVAL_LABEL,
+                                     description=self.i18n.QUOTA_REFRESH_INTERVAL_DESCRIPTION,
+                                     control=self.quota_refresh))
+        self.quota_devin = Win11Toggle(label_text="")
+        self.quota_codex = Win11Toggle(label_text="")
+        self.quota_devin.toggled.connect(self.on_change)
+        self.quota_codex.toggled.connect(self.on_change)
+        layout.addWidget(SettingCard("Devin", description=self.tr("Show the smaller daily or weekly allowance and time until it resets."),
+                                     control=self.quota_devin))
+        self.quota_org = QLineEdit()
+        self.quota_org.setPlaceholderText("org-…")
+        self.quota_org.editingFinished.connect(self.on_change)
+        layout.addWidget(SettingCard(self.tr("Devin organization ID"), control=self.quota_org))
+        self._quota_token = ""
+        self.quota_token_button = QPushButton(self.tr("Set token…"))
+        self.quota_token_button.clicked.connect(self._edit_quota_token)
+        layout.addWidget(SettingCard(self.tr("Devin dashboard sign-in"),
+                                     description=self.tr("Use the token from your organization's Usage & Limits page."),
+                                     control=self.quota_token_button))
+        layout.addWidget(SettingCard(self.tr("ChatGPT weekly limit"),
+                                     description=self.tr("Show the percentage left in your seven-day allowance and the time until reset."),
+                                     control=self.quota_codex))
+        from netspeedtray.core.chatgpt_weekly import sign_in_window
+        self._chatgpt_login = sign_in_window()
+        self.chatgpt_sign_in = QPushButton(self.tr("Sign in…"))
+        self.chatgpt_sign_in.clicked.connect(self._open_chatgpt)
+        self._chatgpt_login.changed.connect(self._sync_chatgpt_login)
+        self._sync_chatgpt_login()
+        layout.addWidget(SettingCard(self.tr("ChatGPT sign-in"),
+                                     description=self.tr("Sign in with OpenAI in your browser to connect the bundled Codex helper."),
+                                     control=self.chatgpt_sign_in))
 
         # --- Placement and visibility (was "Behavior", 2.2.2 D7): which taskbar, dragging, floating, and
         # when the widget steps out of the way (full screen, the app buttons). ---
@@ -157,6 +197,42 @@ class WidgetPage(QWidget):
         layout.addWidget(self.mini_graph_section)
 
         layout.addStretch()
+
+    def _open_chatgpt(self):
+        try:
+            self._chatgpt_login.open()
+        except (OSError, RuntimeError):
+            QMessageBox.warning(self, self.tr("ChatGPT sign-in"),
+                                self.tr("Check that the full NetSpeedTray package is installed and your local app data folder is writable."))
+
+    def _sync_chatgpt_login(self):
+        active = self._chatgpt_login.active
+        self.chatgpt_sign_in.setEnabled(not active)
+        self.chatgpt_sign_in.setText(self.tr("Signing in…") if active else self.tr("Sign in…"))
+        if self._chatgpt_login.failed:
+            self.chatgpt_sign_in.setText(self.tr("Try again…"))
+
+    def _edit_quota_token(self):
+        from netspeedtray.core.quotas import TOKEN_ENTROPY
+        from netspeedtray.utils.secret_store import protect
+
+        text, ok = QInputDialog.getText(
+            self, self.tr("Devin dashboard sign-in"),
+            self.tr("Paste the Authorization value from the billing/quota/usage request. "
+                    "Leave empty to remove the saved token."), QLineEdit.EchoMode.Password)
+        if not ok:
+            return
+        text = text.strip()
+        blob = protect(text, TOKEN_ENTROPY) if text else ""
+        if text and not blob:
+            QMessageBox.warning(self, "NetSpeedTray", self.tr("Windows could not protect the token."))
+            return
+        self._set_quota_token(blob)
+        self.on_change()
+
+    def _set_quota_token(self, blob):
+        self._quota_token = blob
+        self.quota_token_button.setText(self.tr("Change token…") if blob else self.tr("Set token…"))
 
     # --- preferred monitor ------------------------------------------------------
     def _populate_monitor_combo(self) -> None:
@@ -352,6 +428,11 @@ class WidgetPage(QWidget):
 
     # --- config ------------------------------------------------------------------
     def load_settings(self, config: Dict[str, Any]) -> None:
+        self.quota_devin.setChecked(config.get("quota_devin", False))
+        self.quota_codex.setChecked(config.get("quota_codex", False))
+        self.quota_refresh.setValue(config.get("quota_refresh_seconds", constants.config.defaults.DEFAULT_QUOTA_REFRESH_SECONDS))
+        self.quota_org.setText(config.get("quota_devin_org", ""))
+        self._set_quota_token(config.get("quota_devin_token_protected", ""))
         mode = config.get("widget_display_mode", "network_only")
         # Remembered for the modes the dropdown can't express it in (network only / cycle): an
         # untouched Save there must not flip the stored preference (review item 3).
@@ -404,6 +485,11 @@ class WidgetPage(QWidget):
             "stack_hardware_stats": (mode == "side_by_stack") if mode in ("side_by_side", "side_by_stack")
                                     else getattr(self, "_stack_loaded", False),
             "widget_display_order": order,
+            "quota_devin": self.quota_devin.isChecked(),
+            "quota_codex": self.quota_codex.isChecked(),
+            "quota_refresh_seconds": self.quota_refresh.value(),
+            "quota_devin_org": self.quota_org.text().strip(),
+            "quota_devin_token_protected": self._quota_token,
             "preferred_monitor": self.preferred_monitor_combo.currentData(),
             "show_on_all_taskbars": self.show_on_all_taskbars.isChecked(),
             "free_move": self.free_move.isChecked(),

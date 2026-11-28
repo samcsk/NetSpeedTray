@@ -239,6 +239,8 @@ open it.
 | Route lookup | UDP `connect()` to `8.8.8.8:80` / `[2001:4860:4860::8888]:80` - **no packet is sent**; it only asks Windows which adapter has the default route | When finding the main connection | On | - |
 | LibreHardwareMonitor | HTTP to `127.0.0.1:8085/data.json` (this PC only) | While temperature or power readings are on, or the Monitor window is open; retried every 30 s while LHM doesn't answer | - | Stop LHM's web server (or don't run LHM) |
 | Metrics endpoint | **Listens** on `127.0.0.1` and `[::1]`, port 9184 | While turned on | **Off** | Settings → Advanced → Integrations |
+| Devin quota | HTTPS to `app.devin.ai` with the configured organization ID and dashboard token | On enable, on credential change and at the quota refresh interval (default 30 seconds) | **Off** | Settings → Widget → AI quotas |
+| ChatGPT quota | Bundled OpenAI Codex app-server reads the default account's seven-day rate limit using a dedicated local sign-in | On enable, on sign-in and at the quota refresh interval (default 30 seconds) | **Off** | Settings → Widget → AI quotas |
 
 The latency check pings the default gateway of a connected physical adapter (Ethernet or Wi-Fi) when
 the PC has more than one default route, so a full-tunnel VPN's own default route does not turn the

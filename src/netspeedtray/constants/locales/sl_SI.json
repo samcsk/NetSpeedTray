@@ -117,6 +117,8 @@
     "DOWNLOAD_LABEL": "Prenos",
     "LANGUAGE_LABEL": "Jezik",
     "UPDATE_INTERVAL_LABEL": "Interval posodabljanja",
+    "QUOTA_REFRESH_INTERVAL_LABEL": "Interval posodabljanja kvot",
+    "QUOTA_REFRESH_INTERVAL_DESCRIPTION": "Kako pogosto se preverjajo kvote omogočenih ponudnikov.",
     "UPDATE_INTERVAL_DESCRIPTION": "Priporočeno je 1s. 0,5s osvežuje hitreje, a porabi več CPU; zgodovina se še vedno shrani enkrat na sekundo.",
     "START_WITH_WINDOWS_LABEL": "Zaženi z zagonom sistema Windows",
     "FREE_MOVE_LABEL": "Prosto premikanje (brez pripenjanja)",

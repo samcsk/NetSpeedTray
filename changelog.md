@@ -75,6 +75,22 @@ ALSO
 
 ---
 
+## [2.2.2-beta.2] - November 27, 2026
+
+This prerelease of the fork adds a weekly reset countdown to the ChatGPT taskbar row.
+
+### Added
+
+- **ChatGPT now shows the time until reset beside the weekly balance**, for example **28% 6d 21h**. The countdown updates between polls. ([Quota widget PR])
+
+### Fixed
+
+- **The quota rows line up with stacked CPU and GPU readings.** On short taskbars, each provider takes only the column width its text needs. ([Quota widget PR])
+
+[Quota widget PR]: https://github.com/samcsk/NetSpeedTray/pull/1
+
+---
+
 ## [2.2.2-beta.1] - November 26, 2026
 
 *A beta, for testers. It's a manual download from the release page - the in-app updater, WinGet

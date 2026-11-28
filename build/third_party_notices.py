@@ -21,16 +21,18 @@ from __future__ import annotations
 import argparse
 import hashlib
 import importlib.metadata as md
+import json
 import os
 import re
 import shutil
 import ssl
 import sys
+from pathlib import Path
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 NOTICES_NAME = "THIRD-PARTY-NOTICES.txt"
 LICENSE_NAME = "LICENSE.txt"   # the repo's LICENSE (GPLv3), shipped with an extension Notepad opens
-SOURCE_URL = "https://github.com/erez-c137/NetSpeedTray"
+SOURCE_URL = "https://github.com/samcsk/NetSpeedTray"
 
 # Every package in requirements.txt: (licence summary, home page). Summaries follow each package's own
 # metadata (License-Expression where it has one). A package missing here stops the build on purpose.
@@ -93,7 +95,7 @@ def runtime_requirements(path: str | None = None) -> list[str]:
     return sorted(set(names))
 
 
-def _read_text(path: str) -> str:
+def _read_text(path: str | Path) -> str:
     with open(path, encoding="utf-8", errors="replace") as fh:
         return fh.read().replace("\r\n", "\n").strip("\n")
 
@@ -171,6 +173,14 @@ def generate(requirements_path: str | None = None) -> str:
     if missing:
         raise SystemExit(f"[third_party_notices] not installed in this environment "
                          f"(pip install -r requirements.txt): {missing}")
+
+    codex_version = json.loads(_read_text(Path(ROOT) / "build" / "codex-release.json"))["version"]
+    codex_notices = ("LICENSE", "NOTICE", "Ratatui-LICENSE", "WezTerm-LICENSE")
+    components.append((
+        "OpenAI Codex", codex_version, "Apache-2.0, with third-party notices",
+        f"https://github.com/openai/codex/tree/rust-v{codex_version}",
+        [(name, _vendored(f"codex/{name}")) for name in codex_notices],
+        "The unmodified Windows x64 executable is bundled for ChatGPT account quota reads."))
 
     py_ver = sys.version.split()[0]
     py_mm = ".".join(py_ver.split(".")[:2])

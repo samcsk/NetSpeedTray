@@ -134,7 +134,7 @@ def test_the_notices_give_exact_source_pointers_for_the_copyleft_parts(notices_m
                 f"/PyQt6/pyqt6-{md.version('pyqt6')}.tar.gz",
                 f"/python_bidi-{md.version('python-bidi')}.tar.gz",
                 f"/pyinstaller-{md.version('pyinstaller')}.tar.gz",
-                f"https://github.com/erez-c137/NetSpeedTray/tree/v{notices_mod.app_version()}"):
+                f"https://github.com/samcsk/NetSpeedTray/tree/v{notices_mod.app_version()}"):
         assert url in text, url
 
 

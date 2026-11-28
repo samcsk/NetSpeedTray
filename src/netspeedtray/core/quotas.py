@@ -1,0 +1,201 @@
+"""Poll the enabled Devin and ChatGPT quota providers off the UI thread."""
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import UTC, datetime
+import json
+import math
+import re
+import threading
+
+from PyQt6.QtCore import QObject, QTimer, pyqtSignal
+
+from netspeedtray import constants
+from netspeedtray.utils import https
+
+TOKEN_ENTROPY = b"NetSpeedTray/Devin quota/v1"
+TIMEOUT = 15
+MAX_RESPONSE = 256 * 1024
+
+
+def _parse_reset(value) -> datetime | None:
+    try:
+        if isinstance(value, str):
+            reset = datetime.fromisoformat(value)
+            return reset if reset.tzinfo is not None else None
+        if type(value) in (int, float):
+            # The API can represent the same instant in Unix seconds or milliseconds.
+            seconds = value / 1000 if value >= 100_000_000_000 else value
+            return datetime.fromtimestamp(seconds, UTC)
+    except (ValueError, OverflowError, OSError):
+        pass
+    return None
+
+
+def _reset_countdown(reset: datetime, now: datetime) -> str:
+    try:
+        seconds = (reset - now).total_seconds()
+        if seconds >= 86400:
+            # The Usage & Limits page rounds days using local wall time across DST.
+            local_reset = reset.astimezone().replace(tzinfo=None)
+            local_now = now.astimezone().replace(tzinfo=None)
+            days = (local_reset - local_now).total_seconds() / 86400
+            return f"{math.floor(days + 0.5)}d"
+    except (ValueError, OverflowError, OSError):
+        return ""
+    if seconds >= 3600:
+        return f"{math.floor(seconds / 3600 + 0.5)}h"
+    if seconds >= 60:
+        return f"{math.floor(seconds / 60 + 0.5)}m"
+    return "<1m" if seconds > 0 else ""
+
+
+@dataclass(frozen=True)
+class DevinReading:
+    percentage: str
+    reset_at: datetime | None
+
+    def __str__(self):
+        countdown = _reset_countdown(self.reset_at, datetime.now(UTC)) if self.reset_at else ""
+        return f"{self.percentage} {countdown}".rstrip()
+
+
+def devin_readout(data) -> DevinReading | str:
+    if data.get("is_quota_plan") is False or data.get("has_quota_allocation") is False:
+        return "No quota"
+    windows = []
+    for window in ("daily", "weekly"):
+        used = data.get(f"{window}_percentage")
+        if not data.get(f"hide_{window}_quota") and type(used) in (int, float) and 0 <= used < math.inf:
+            windows.append((used, data.get(f"{window}_reset_at")))
+    if not windows:
+        return "No data"
+    used, reset = max(windows, key=lambda entry: entry[0])
+    percent = "<1" if 99 < used < 100 else str(round(100 - min(used, 100)))
+    return DevinReading(f"{percent}%", _parse_reset(reset))
+
+
+def fetch_devin(org, protected_token):
+    from netspeedtray.utils.secret_store import unprotect
+    token = (unprotect(protected_token, TOKEN_ENTROPY) or "").strip()
+    token = re.sub(r"^(?:Authorization:\s*)?Bearer\s+", "", token, flags=re.IGNORECASE)
+    if not re.fullmatch(r"org[-_][a-zA-Z0-9_-]+", org) or not re.fullmatch(r"[!-~]+", token):
+        return "Set up"
+    headers = {"Accept": "application/json", "Authorization": f"Bearer {token}", "x-cog-org-id": org}
+    conn = https.connection("app.devin.ai", timeout=TIMEOUT)
+    try:
+        conn.request("GET", f"/api/{org}/billing/quota/usage", headers=headers)
+        response = conn.getresponse()
+        if response.status == 404:
+            conn.close()
+            conn.request("GET", f"/api/organizations/{org}/billing/quota/usage", headers=headers)
+            response = conn.getresponse()
+        if response.status in (401, 403):
+            return "Sign in"
+        if response.status != 200:
+            return "Retry"
+        payload = response.read(MAX_RESPONSE + 1)
+        if len(payload) > MAX_RESPONSE:
+            return "No data"
+        return devin_readout(json.loads(payload))
+    finally:
+        conn.close()
+
+
+class QuotaPoller(QObject):
+    changed = pyqtSignal()
+    account_changed = pyqtSignal(str)
+    _finished = pyqtSignal(str, int, object)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._readings = {}
+        self._active = {}   # provider -> generation that enabled it
+        self._pending = set()
+        self._generation = 0
+        self._devin_login = ("", "")
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._poll)
+        self._finished.connect(self._accept)
+        from netspeedtray.core.chatgpt_weekly import sign_in_window
+        self._chatgpt_login = sign_in_window()
+        self._chatgpt_login.changed.connect(self._login_changed)
+
+    @property
+    def values(self):
+        # Each widget paint gets the current countdown. Pause takes its own text snapshot.
+        return {name: str(reading) for name, reading in self._readings.items()}
+
+    def configure(self, config):
+        seconds = config.get("quota_refresh_seconds", constants.config.defaults.DEFAULT_QUOTA_REFRESH_SECONDS)
+        if self._timer.interval() != seconds * 1000:
+            self._timer.setInterval(seconds * 1000)
+        enabled = {name for name in ("devin", "codex") if config.get(f"quota_{name}", False)}
+        login = (config.get("quota_devin_org", ""), config.get("quota_devin_token_protected", ""))
+        if enabled == self._active.keys() and ("devin" not in enabled or login == self._devin_login):
+            return
+        if login != self._devin_login:
+            self._active.pop("devin", None)
+            self._readings.pop("devin", None)
+            self._devin_login = login
+        self._generation += 1
+        for name in self._active.keys() - enabled:
+            del self._active[name]
+            self._readings.pop(name, None)
+        for name in enabled - self._active.keys():
+            self._active[name] = self._generation
+            self._start(name)
+        if not enabled:
+            self._timer.stop()
+        elif not self._timer.isActive():
+            self._timer.start()
+        self.changed.emit()
+
+    def _poll(self):
+        for name in self._active:
+            self._start(name)
+
+    def _login_changed(self):
+        if "codex" in self._active:
+            # A result from before an account change must never replace the new balance.
+            self._generation += 1
+            self._active["codex"] = self._generation
+            self._readings.pop("codex", None)
+            self.account_changed.emit("codex")
+            self._start("codex")
+            self.changed.emit()
+
+    def _start(self, name):
+        generation = self._active[name]
+        if name == "codex" and self._chatgpt_login.active:
+            self._readings[name] = "Sign in"
+            return
+        if name in self._pending:
+            return
+        self._pending.add(name)
+        login = self._devin_login
+
+        def run():
+            try:
+                if name == "devin":
+                    value = fetch_devin(*login)
+                else:
+                    from netspeedtray.core.chatgpt_weekly import fetch_weekly
+                    value = fetch_weekly()
+            except Exception:
+                # Never log provider output, credentials, or an exception containing either.
+                value = "Retry"
+            try:
+                self._finished.emit(name, generation, value)
+            except RuntimeError:
+                pass  # parent was destroyed during a bounded read
+
+        threading.Thread(target=run, name=f"quota-{name}", daemon=True).start()
+
+    def _accept(self, name, generation, value):
+        self._pending.discard(name)
+        if self._active.get(name) == generation:
+            self._readings[name] = value
+            self.changed.emit()
+        elif name in self._active:
+            self._start(name)

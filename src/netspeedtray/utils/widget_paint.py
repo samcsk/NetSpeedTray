@@ -26,6 +26,7 @@ from PyQt6.QtGui import QColor, QFont, QPainter, QImage
 
 from netspeedtray import constants
 from netspeedtray.utils.helpers import hardware_slots
+from netspeedtray.utils.quota_paint import draw_quotas, quota_height, split_quota_rect
 from netspeedtray.utils.widget_renderer import (MEMORY_ONLY_LABELS, RenderConfig, WidgetRenderer,
                                                 compact_hw_label_width, memory_only_row_width)
 
@@ -62,6 +63,7 @@ class WidgetMetrics:
     identity_band_color: Optional[str] = None  # band tint (hex) or None for the widget's default text color
     identity_band_solid: bool = False          # True = solid alert pill; False = outline pill
     identity_ssid: Optional[str] = None        # v2.1 truncated SSID / connection name, or None when off/blocked
+    quotas: Dict[str, str] = field(default_factory=dict)
 
     def net_bytes(self) -> Tuple[float, float]:
         """(upload, download) in bytes/sec from the stored Mbps - the renderer's unit."""
@@ -101,6 +103,7 @@ def demo_metrics() -> WidgetMetrics:
         cpu_temp=58.0, gpu_temp=64.0,
         cpu_power=35.0, gpu_power=120.0,
         ram_used=9.2, ram_total=16.0,
+        quotas={"devin": "30% 2d", "codex": "28% 6d 21h"},
         vram_used=3.1, vram_total=8.0,
     )
 
@@ -529,9 +532,9 @@ def side_classic_height(config: RenderConfig, line_height: int) -> int:
 def side_bar_height(config: RenderConfig, fit: Optional[SideBarFit], line_height: int) -> int:
     """The side-taskbar widget height for ``fit`` - what the layout reserves and the Settings preview
     shows, so the two can't disagree."""
-    if fit is None or fit.classic:
-        return side_classic_height(config, line_height)
-    return side_compact_height(config, fit, line_height)
+    base = (side_classic_height(config, line_height) if fit is None or fit.classic
+            else side_compact_height(config, fit, line_height))
+    return base + quota_height(line_height, config.quota_names)
 
 
 def split_compact_height(config: RenderConfig, fit: SideBarFit, line_height: int) -> int:
@@ -1044,6 +1047,21 @@ def _composite_layers(painter: QPainter, graph: QImage, text: QImage) -> None:
 def _draw_content(painter: QPainter, rect: QRect, renderer: WidgetRenderer, config: RenderConfig,
                   metrics: WidgetMetrics, *, layout_mode: str, cycle_mode: str,
                   network_width: Optional[int], font: Optional[QFont]) -> None:
+    names = config.quota_names
+    if names:
+        rect, panel = split_quota_rect(rect, renderer.metrics, names, layout_mode == "vertical")
+    _draw_stats(painter, rect, renderer, config, metrics, layout_mode=layout_mode,
+                cycle_mode=cycle_mode, network_width=network_width, font=font)
+    if names:
+        painter.setFont(renderer.font)
+        draw_quotas(painter, panel, names, metrics.quotas, layout_mode == "vertical",
+                    config.default_color, renderer.metrics)
+        renderer._extend_content_bounds(panel)
+
+
+def _draw_stats(painter: QPainter, rect: QRect, renderer: WidgetRenderer, config: RenderConfig,
+                metrics: WidgetMetrics, *, layout_mode: str, cycle_mode: str,
+                network_width: Optional[int], font: Optional[QFont]) -> None:
     """Everything over the background: the mini graph (to renderer.graph_layer) and the foreground."""
     width, height = rect.width(), rect.height()
     mode = _resolve_mode(config, cycle_mode)
